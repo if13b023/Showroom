@@ -14,17 +14,24 @@
 #include <GL/GLU.h>
 
 int window;
-
-float hour = 0.0;
-float day = 0.0;
-float day_m = 0.0;
 float inc = 1.00;
 
-float	z = 0.0f,
+float	main_z = 0.0f,
 		main_x = 0.0f;
+
+bool toggleColor = false;
 
 std::vector<tinyobj::shape_t> shapes;
 std::vector<tinyobj::material_t> materials;
+
+GLfloat redDiffuseMaterial[] = { 1.0, 0.0, 0.0 }; //set the material to red
+GLfloat whiteSpecularMaterial[] = { 1.0, 1.0, 1.0 }; //set the material to white
+GLfloat greenEmissiveMaterial[] = { 0.0, 1.0, 0.0 }; //set the material to green
+GLfloat whiteSpecularLight[] = { 1.0, 1.0, 1.0 }; //set the light specular to white
+GLfloat blackAmbientLight[] = { 0.0, 0.0, 0.0 }; //set the light ambient to black
+GLfloat whiteDiffuseLight[] = { 1.0, 1.0, 1.0 }; //set the diffuse light to white
+GLfloat blankMaterial[] = { 0.0, 0.0, 0.0 }; //set the diffuselight to white
+GLfloat mShininess[] = { 64 }; //set the shininess of the material
 
 void resize(int width, int height)
 {
@@ -49,11 +56,11 @@ void keyPressed(unsigned char key, int x, int y)
 		break;
 
 	case 'w':
-		z += 1.0f;
+		main_z += 1.0f;
 		break;
 
 	case 's':
-		z -= 1.0f;
+		main_z -= 1.0f;
 		break;
 
 	case 'd':
@@ -63,6 +70,14 @@ void keyPressed(unsigned char key, int x, int y)
 	case 'a':
 		main_x += 1.0f;
 		break;
+
+	case 't':
+		if (toggleColor)
+			glMaterialfv(GL_FRONT, GL_EMISSION, blankMaterial);
+		else
+			glMaterialfv(GL_FRONT, GL_EMISSION, greenEmissiveMaterial);
+		toggleColor = !toggleColor;
+		break;
 	}
 }
 
@@ -70,93 +85,73 @@ static void specialKeyPressed(int key, int x, int y)
 {
 	switch (key) {
 	case GLUT_KEY_RIGHT:
-		inc += 1.0;
+		inc += 2.0;
 		break;
 	case GLUT_KEY_LEFT:
-		inc -= 1.0;
+		inc -= 2.0;
 		break;
 	}
 }
 
+void light(void)
+{
+	GLfloat lightPos[] = { 10.0f, 0.0f, 0.0f , 1.0f };
+	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, whiteDiffuseLight);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, whiteSpecularLight);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, blackAmbientLight);
+}
+
 void display()
 {
+	GLfloat material[] = { 1.0, 0.0, 0.0 };
+	//glMaterialfv(GL_FRONT, GL_DIFFUSE, material);
+
+	glClearColor(0, 0, 0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
-	hour += inc;
-	day += inc / 24.0;
-	day_m += inc / 28.0;
-	hour = hour - ((int)(hour / 24)) * 24;
-	day = day - ((int)(day / 365)) * 365;
+	gluLookAt(main_x, 0, main_z, 0, 0, 0, 0, 1, 0);
 
-	//printf("%f - %f\n",day, hour);
+	light();
 
-	/*
-	//glRotatef(360*day/365.0, 0.0, 1.0, 0.0);
-
-	// ecliptic
-	//glRotatef(15.0, 1.0, 0.0, 0.0);
-
-	//top view
-	glRotatef(90.0, 1.0, 0.0, 0.0);
-
-	// sun
-	glPushMatrix();
-	glRotatef(90, 1.0, 0, 0);
-	glRotatef(360 * day / 365, 0, 0, 1.0);
-	glColor3f(1.0, 1.0, 0.0);
-	glutWireSphere(1.0, 32 * 1, 16 * 1);
-	glPopMatrix();
-
-	// earth
-	// position around the sun
-	glRotatef(360.0*day / 365.0, 0.0, 1.0, 0.0);
-	glTranslatef(4.0, 0.0, 0.0);
+	//glRotatef(inc, 0, 1, 0);
+	//glTranslatef(main_x, 0, main_z);
 
 	glPushMatrix();
-	// rotate the earth on its axis
-	glRotatef(360.0*hour / 24.0, 0.0, 1.0, 0.0);
-	glColor3f(0.5, 0.5, 1.0);
-	glRotatef(90, 1.0, 0, 0);
-	glutWireSphere(0.5, 16, 8);
-	glPopMatrix();
-
-	// moon
-	//glRotatef(360.0*4*day/365.0, 0.0, 1.0, 0.0);
-	glRotatef(360.0 * 4 * day / 365.0, 0.0, 1.0, 0.0);
-	glTranslatef(0.7f, 0.0f, 0.0f);
-	glColor3f(0.3f, 0.7f, 0.3f);
-	glRotatef(90, 1.0, 0, 0);
-	glutWireSphere(0.2f, 8, 4);*/
-
-	//glDrawArrays(GL_TRIANGLES, 
-
-	glRotatef(inc, 0, 1, 0);
-	glTranslatef(main_x, 0, z);
-
-	glColor3f(1.0, 1.0, 1.0);
-
-	glPushMatrix();
-	glTranslatef(0.0, 0.0, -70.0);
+	glPushAttrib(GL_LIGHTING_BIT);
+	glMaterialfv(GL_FRONT, GL_EMISSION, blankMaterial);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, redDiffuseMaterial);
+	glTranslatef(0.0, 0.0, 0.0);
 	glRotatef(90, 1, 0, 0);
 	glutWireSphere(400.0, 32 * 2, 16 * 2);
+	glPopAttrib();
 	glPopMatrix();
 
-	glPushMatrix();
+	/*glPushMatrix();
 	glTranslatef(0.0, 0.0, -70.0);
 	glutWireCube(20.0);
-	glPopMatrix();
-
-	glColor3f(1.0f, 0, 0);
+	glPopMatrix();*/
 
 	glPushMatrix();
 
-	glTranslatef(0, 0, -50.0);
+	glTranslatef(0, 0, -5.0);
 	glEnableClientState(GL_VERTEX_ARRAY);
 
 	//use: glDrawElements
 	for (int i = 0; i < shapes.size(); ++i)
 	{
+		float* diffuse = materials[shapes[i].mesh.material_ids[0]].diffuse;
+		//float diffuse[] = { 0, 0, 1.0 };
+		material[0] = diffuse[0];
+		material[1] = diffuse[1];
+		material[2] = diffuse[2];
+
+		//glMaterialfv(GL_FRONT, GL_SPECULAR, whiteSpecularMaterial);
+		//glMaterialfv(GL_FRONT, GL_SHININESS, mShininess);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, material);
+
 		glVertexPointer(3, GL_FLOAT, 0, shapes[i].mesh.positions.data());
 		glDrawElements(GL_TRIANGLES, shapes[i].mesh.indices.size(), GL_UNSIGNED_INT, shapes[i].mesh.indices.data());
 	}
@@ -169,22 +164,31 @@ void display()
 	//glDrawArrays(GL_TRIANGLES, 0, shapes[0].mesh.positions.size());
 
 	glDisableClientState(GL_VERTEX_ARRAY);
-
 	glPopMatrix();
 
-	GLfloat lightPos[] = { 0,0,0,0 };
-	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+	glPushMatrix();
+	glTranslatef(5, 0, 0);
+	glutSolidTeapot(2);
+	glPopMatrix();
 
 	glutSwapBuffers();
+
+	int err = GL_NO_ERROR;
+	if ((err = glGetError()) != GL_NO_ERROR)
+		std::cout << "Error: " << err << std::endl;
 }
 
 void init(int width, int height)
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClearDepth(1.0);
-	glDepthFunc(GL_LESS);
+	//glDepthFunc(GL_LESS);
 	glEnable(GL_DEPTH_TEST);
-	glShadeModel(GL_FLAT);
+	glEnable(GL_LIGHTING);
+	//glEnable(GL_COLOR_MATERIAL);
+	//glShadeModel(GL_FLAT);
+	glShadeModel(GL_SMOOTH);
+	glEnable(GL_LIGHT0);
 	resize(width, height);
 }
 
@@ -194,11 +198,10 @@ void timer(int value)
 	glutTimerFunc(1000.0 / 60.0, &timer, 1);
 }
 
-
 int main(int argc, char** argv)
 {
-	std::string inputfile = "cornell_box_small.obj";
-	std::string inputdir = "G:/FH/Sem5/CSE/tinyobjloader/";
+	std::string inputfile = "suzanne.obj";
+	std::string inputdir = "../";
 
 	//std::cin >> inputdir;
 	//std::cin >> inputfile;
@@ -267,22 +270,24 @@ int main(int argc, char** argv)
 
 	//OpenGL
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowSize(640, 480);
-	glutInitWindowPosition(0, 0);
+	glutInitWindowPosition(100, 100);
 	window = glutCreateWindow("Showroom");
-	glutDisplayFunc(&display);
+	glutDisplayFunc(display);
 	//glutIdleFunc(&display); 
 	glutTimerFunc(1000.0 / 60.0, &timer, 1);
-	glutReshapeFunc(&resize);
-	glutKeyboardFunc(&keyPressed);
-	glutSpecialFunc(&specialKeyPressed);
+	glutReshapeFunc(resize);
+	glutKeyboardFunc(keyPressed);
+	glutSpecialFunc(specialKeyPressed);
 	init(640, 480);
 
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_COLOR_MATERIAL);
-	glEnable(GL_LIGHT0);
+	light();
+
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, redDiffuseMaterial);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, whiteSpecularMaterial);
+	glMaterialfv(GL_FRONT, GL_SHININESS, mShininess);
+	glMaterialfv(GL_FRONT, GL_EMISSION, blankMaterial);
 
 	glutMainLoop();
 
