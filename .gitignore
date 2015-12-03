@@ -29,3 +29,5 @@
 
 # Own
 *.sdf
+
+!suzanne.obj
