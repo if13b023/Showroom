@@ -14,9 +14,10 @@
 #include <GL/GLU.h>
 
 int window;
-float inc = 1.00;
+float	inc = 1.0f,
+		rot = 0.0f;
 
-float	main_z = 0.0f,
+float	main_z = 10.0f,
 		main_x = 0.0f;
 
 bool toggleColor = false;
@@ -112,7 +113,7 @@ void display()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
-	gluLookAt(main_x, 0, main_z, 0, 0, 0, 0, 1, 0);
+	gluLookAt(sinf(rot) * 10, 0, cosf(rot) * 10, 0, 0, 0, 0, 1, 0);
 
 	light();
 
@@ -123,7 +124,7 @@ void display()
 	glPushAttrib(GL_LIGHTING_BIT);
 	glMaterialfv(GL_FRONT, GL_EMISSION, blankMaterial);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, redDiffuseMaterial);
-	glTranslatef(0.0, 0.0, 0.0);
+	//glTranslatef(0.0, 0.0, 0.0);
 	glRotatef(90, 1, 0, 0);
 	glutWireSphere(400.0, 32 * 2, 16 * 2);
 	glPopAttrib();
@@ -138,6 +139,7 @@ void display()
 
 	glTranslatef(0, 0, -5.0);
 	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
 
 	//use: glDrawElements
 	for (int i = 0; i < shapes.size(); ++i)
@@ -153,6 +155,8 @@ void display()
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, material);
 
 		glVertexPointer(3, GL_FLOAT, 0, shapes[i].mesh.positions.data());
+		glNormalPointer(GL_FLOAT, 0, shapes[i].mesh.normals.data());
+
 		glDrawElements(GL_TRIANGLES, shapes[i].mesh.indices.size(), GL_UNSIGNED_INT, shapes[i].mesh.indices.data());
 	}
 
@@ -164,10 +168,11 @@ void display()
 	//glDrawArrays(GL_TRIANGLES, 0, shapes[0].mesh.positions.size());
 
 	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
 	glPopMatrix();
 
 	glPushMatrix();
-	glTranslatef(5, 0, 0);
+	glTranslatef(0, 0, 5);
 	glutSolidTeapot(2);
 	glPopMatrix();
 
@@ -176,6 +181,8 @@ void display()
 	int err = GL_NO_ERROR;
 	if ((err = glGetError()) != GL_NO_ERROR)
 		std::cout << "Error: " << err << std::endl;
+
+	rot += 0.01f;
 }
 
 void init(int width, int height)
@@ -223,7 +230,7 @@ int main(int argc, char** argv)
 	std::cout << "# of shapes    : " << shapes.size() << std::endl;
 	std::cout << "# of materials : " << materials.size() << std::endl;
 
-	for (size_t i = 0; i < shapes.size(); i++) {
+	/*for (size_t i = 0; i < shapes.size(); i++) {
 		printf("shape[%ld].name = %s\n", i, shapes[i].name.c_str());
 		printf("Size of shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
 		printf("Size of shape[%ld].material_ids: %ld\n", i, shapes[i].mesh.material_ids.size());
@@ -263,7 +270,7 @@ int main(int argc, char** argv)
 			printf("  material.%s = %s\n", it->first.c_str(), it->second.c_str());
 		}
 		printf("\n");
-	}
+	}*/
 
 	//shape = shapes[0].mesh.indices.data();
 	//shape_size = shapes[0].mesh.indices.size();

@@ -29,5 +29,8 @@
 
 # Own
 *.sdf
+*.ilk
+*.pdb
+*.opensdf
 
 !suzanne.obj
