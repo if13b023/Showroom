@@ -10,8 +10,8 @@
 #include <tiny_obj_loader.h>
 
 #include <GL/glut.h>
-#include <GL/GL.h>
-#include <GL/GLU.h>
+//#include <GL/GL.h>
+//#include <GL/GLU.h>
 
 int window;
 float	inc = 1.0f,
