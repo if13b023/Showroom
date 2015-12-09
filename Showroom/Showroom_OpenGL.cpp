@@ -13,9 +13,11 @@
 
 #include <SFML\Window.hpp>
 #include <SFML\OpenGL.hpp>
+#include <SFML\Graphics\Image.hpp>
 
-float	cam_z = -10.0f,
+float	cam_z = 0.0f,
 		cam_x = 0.0f,
+		cam_y = -10.0f,
 		cam_h = 0.0f,
 		cam_v = 0.0f;
 
@@ -25,7 +27,7 @@ GLfloat redDiffuseMaterial[] = { 1.0, 0.0, 0.0 }; //set the material to red
 GLfloat whiteSpecularMaterial[] = { 1.0, 1.0, 1.0 }; //set the material to white
 GLfloat greenEmissiveMaterial[] = { 0.0, 1.0, 0.0 }; //set the material to green
 GLfloat whiteSpecularLight[] = { 1.0, 1.0, 1.0 }; //set the light specular to white
-GLfloat blackAmbientLight[] = { 0.0, 0.0, 0.0 }; //set the light ambient to black
+GLfloat blackAmbientLight[] = { 0.5, 0.5, 0.5 }; //set the light ambient to black
 GLfloat whiteDiffuseLight[] = { 1.0, 1.0, 1.0 }; //set the diffuse light to white
 GLfloat blankMaterial[] = { 0.0, 0.0, 0.0 }; //set the diffuselight to white
 GLfloat mShininess[] = { 64 }; //set the shininess of the material
@@ -47,7 +49,7 @@ void resize(sf::Window& window)
 
 void light(void)
 {
-	GLfloat lightPos[] = { 10.0f, 0.0f, 0.0f , 1.0f };
+	GLfloat lightPos[] = { 0.0f, 10.0f, 0.0f , 1.0f };
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, whiteDiffuseLight);
@@ -55,7 +57,7 @@ void light(void)
 	glLightfv(GL_LIGHT0, GL_AMBIENT, blackAmbientLight);
 }
 
-void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::material_t> materials)
+void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::material_t> materials, sf::Image& texfile)
 {
 	GLfloat material[] = { 1.0, 0.0, 1.0 };
 	//glMaterialfv(GL_FRONT, GL_DIFFUSE, material);
@@ -67,6 +69,7 @@ void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::materia
 	glPushMatrix();
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_NORMAL_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
 	//use: glDrawElements
 	for (int i = 0; i < shapes.size(); ++i)
@@ -81,6 +84,7 @@ void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::materia
 		//glMaterialfv(GL_FRONT, GL_SHININESS, mShininess);
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, material);
 
+		glTexCoordPointer(2, GL_FLOAT, 0, shapes[i].mesh.texcoords.data());
 		glVertexPointer(3, GL_FLOAT, 0, shapes[i].mesh.positions.data());
 		glNormalPointer(GL_FLOAT, 0, shapes[i].mesh.normals.data());
 
@@ -96,6 +100,7 @@ void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::materia
 
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_NORMAL_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	glPopMatrix();
 
 	glPushMatrix();
@@ -121,19 +126,34 @@ void init(sf::Window& window)
 	//glShadeModel(GL_FLAT);
 	glShadeModel(GL_SMOOTH);
 	glEnable(GL_LIGHT0);
+	glEnable(GL_TEXTURE_2D);
 	resize(window);
 }
 
 int main(int argc, char** argv)
 {
+	for (int i = 1; i < argc; ++i)
+		std::cout << "Argument: " << argv[i] << std::endl;
+
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 
-	std::string inputfile = "suzanne.obj";
-	std::string inputdir = "../";
+	std::vector<std::string> inputfiles;
+	std::string inputdir;
 
-	//std::cin >> inputdir;
-	//std::cin >> inputfile;
+	if (argc >= 3)
+	{
+		inputdir = argv[1];
+		for (int i = 2; i < argc; ++i)
+			inputfiles.push_back(argv[i]);
+	}
+	else
+	{
+		std::string in;
+		std::cin >> inputdir;
+		std::cin >> in;
+		inputfiles.push_back(in);
+	}
 
 	//std::vector<tinyobj::shape_t> shapes;
 	//std::vector<tinyobj::material_t> materials;
@@ -143,7 +163,10 @@ int main(int argc, char** argv)
 	//***
 
 	std::string err;
-	bool ret = tinyobj::LoadObj(shapes, materials, err, (inputdir + inputfile).c_str(), inputdir.c_str());
+	bool ret = false;
+
+	for (int i = 0; i < inputfiles.size(); ++i)
+		ret = tinyobj::LoadObj(shapes, materials, err, (inputdir + inputfiles.at(i)).c_str(), inputdir.c_str());
 
 	if (!err.empty()) { // `err` may contain warning message.
 		std::cout << err << std::endl;
@@ -164,6 +187,25 @@ int main(int argc, char** argv)
 	sf::Clock clock;
 	float dt = 0.016f;
 	sf::Vector2f mouse_old(0, 0);
+	//***
+
+	//Texture
+	sf::Image texfile;
+	if (texfile.loadFromFile("../TestTex.png") == 0)
+	{
+		std::cout << "can not load texture...\n";
+		return 666;
+	}
+
+	GLuint tex;
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texfile.getSize().x, texfile.getSize().y, 0, GL_RGBA, GL_UNSIGNED_BYTE, texfile.getPixelsPtr());
 	//***
 
 	//main loop
@@ -195,9 +237,27 @@ int main(int argc, char** argv)
 			}
 		}
 
+		//Mouse Input
+		float sens = 3.0f;
+		//sf::Vector2f mouse_diff = mouse_old - sf::Vector2f(sf::Mouse::getPosition());
+		sf::Vector2f mouse_diff = sf::Vector2f(sf::Mouse::getPosition());
+		cam_h = (mouse_diff.x / sf::VideoMode::getDesktopMode().width) * 360.0f * sens;
+		cam_v = (mouse_diff.y / sf::VideoMode::getDesktopMode().height) * 360.0f * sens;
+
+		while (cam_h > 360.0) cam_h -= 360.0f;
+		while (cam_h < 0.0) cam_h += 360.0f;
+
+		while (cam_v > 360.0) cam_v -= 360.0f;
+		while (cam_v < 0.0) cam_v += 360.0f;
+		//***
+
 		//Keyboard Input
 		float pi = static_cast<float>(M_PI);
 		float moveSpeed = 5.0f;
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+			moveSpeed *= 2.0f;
+
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
 		{
 			cam_z -= moveSpeed * dt * -sinf((cam_h*pi) / 180.0f);
@@ -213,23 +273,14 @@ int main(int argc, char** argv)
 		{
 			cam_z += moveSpeed * dt * cosf((cam_h*pi) / 180.0f);
 			cam_x -= moveSpeed * dt * sinf((cam_h*pi) / 180.0f);
+			cam_y += moveSpeed * dt * sinf((cam_v*pi) / 180.0f);
 		}
 		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
 		{
 			cam_z -= moveSpeed * dt * cosf((cam_h*pi) / 180.0f);
 			cam_x += moveSpeed * dt * sinf((cam_h*pi) / 180.0f);
+			cam_y -= moveSpeed * dt * sinf((cam_v*pi) / 180.0f);
 		}
-		//***
-
-		//Mouse Input
-		float sens = 3.0f;
-		//sf::Vector2f mouse_diff = mouse_old - sf::Vector2f(sf::Mouse::getPosition());
-		sf::Vector2f mouse_diff = sf::Vector2f(sf::Mouse::getPosition());
-		cam_h = (mouse_diff.x / sf::VideoMode::getDesktopMode().width) * 360.0f * sens;
-		cam_v = (mouse_diff.y / sf::VideoMode::getDesktopMode().height) * 360.0f * sens;
-
-		while (cam_h > 360.0) cam_h -= 360.0f;
-		while (cam_h < 0.0) cam_h += 360.0f;
 		//***
 
 		glClearColor(0, 0, 0, 1.0);
@@ -238,10 +289,10 @@ int main(int argc, char** argv)
 
 		glRotatef(cam_v, 1, 0, 0);
 		glRotatef(cam_h, 0, 1, 0);
-		glTranslatef(cam_x, 0, cam_z);
+		glTranslatef(cam_x, cam_y, cam_z);
 
 		// draw...
-		display(shapes, materials);
+		display(shapes, materials, texfile);
 
 		// end the current frame (internally swaps the front and back buffers)
 		window.display();

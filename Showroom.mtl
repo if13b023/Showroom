@@ -1,0 +1,45 @@
+# Blender MTL File: 'Showroom.blend'
+# Material Count: 4
+
+newmtl Concrete.001
+Ns 94.117647
+Ka 1.000000 1.000000 1.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.318182 0.318182 0.318182
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd G:\AnimationStuff\Textures\Concrete\concrete-917_tiled.jpg
+
+newmtl Wall.001
+Ns 94.117647
+Ka 1.000000 1.000000 1.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd G:\AnimationStuff\Textures\Decals\DecalBottom0006_2_L.jpg
+
+newmtl plane
+Ns 7.843137
+Ka 0.117647 0.117647 0.117647
+Kd 1.000000 1.000000 1.000000
+Ks 0.752941 0.752941 0.752941
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd G:\AnimationStuff\Models\AH-64_Apache\AH-64_Apache\AH-64_Apache_P01.png
+
+newmtl prop
+Ns 7.843137
+Ka 0.117647 0.117647 0.117647
+Kd 0.411765 0.411765 0.411765
+Ks 0.752941 0.752941 0.752941
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
