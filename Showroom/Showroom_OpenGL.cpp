@@ -18,7 +18,7 @@
 float	cam_z = 0.0f,
 		cam_x = 0.0f,
 		cam_y = -10.0f,
-		cam_h = 0.0f,
+		cam_h = 90.0f,
 		cam_v = 0.0f;
 
 //bool toggleColor = false;
@@ -31,6 +31,8 @@ GLfloat blackAmbientLight[] = { 0.5, 0.5, 0.5 }; //set the light ambient to blac
 GLfloat whiteDiffuseLight[] = { 1.0, 1.0, 1.0 }; //set the diffuse light to white
 GLfloat blankMaterial[] = { 0.0, 0.0, 0.0 }; //set the diffuselight to white
 GLfloat mShininess[] = { 64 }; //set the shininess of the material
+
+enum Quality{Q_LOW = 2, Q_MID = 1, Q_HIGH = 0, Q_ALL = -1};
 
 void resize(sf::Window& window)
 {
@@ -57,38 +59,57 @@ void light(void)
 	glLightfv(GL_LIGHT0, GL_AMBIENT, blackAmbientLight);
 }
 
-void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::material_t> materials, sf::Image& texfile)
+void draw(tinyobj::shape_t& shape, tinyobj::material_t& mat)
+{
+	float* diffuse = mat.diffuse;
+	mShininess[0] = mat.shininess;
+
+	//material[0] = diffuse[0];
+	//material[1] = diffuse[1];
+	//material[2] = diffuse[2];
+
+	glMaterialfv(GL_FRONT, GL_SPECULAR, whiteSpecularMaterial);
+	glMaterialfv(GL_FRONT, GL_SHININESS, mShininess);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+
+	glTexCoordPointer(2, GL_FLOAT, 0, shape.mesh.texcoords.data());
+	glVertexPointer(3, GL_FLOAT, 0, shape.mesh.positions.data());
+	glNormalPointer(GL_FLOAT, 0, shape.mesh.normals.data());
+
+	glDrawElements(GL_TRIANGLES, shape.mesh.indices.size(), GL_UNSIGNED_INT, shape.mesh.indices.data());
+}
+
+void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::material_t>& materials, float x, float y, float z, float yrot, Quality q)
 {
 	GLfloat material[] = { 1.0, 0.0, 1.0 };
 	//glMaterialfv(GL_FRONT, GL_DIFFUSE, material);
-
-	//gluLookAt(sinf(rot) * 10, 0, cosf(rot) * 10, 0, 0, 0, 0, 1, 0);
-
-	light();
+	glPushMatrix();
+	glRotatef(yrot, 0, 1, 0);
+	glTranslatef(x, y, z);
 
 	glPushMatrix();
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_NORMAL_ARRAY);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
 	//use: glDrawElements
 	for (int i = 0; i < shapes.size(); ++i)
 	{
-		float* diffuse = materials[shapes[i].mesh.material_ids[0]].diffuse;
+		/*float* diffuse = materials[shapes[i].mesh.material_ids[0]].diffuse;
+		mShininess[0] = materials[shapes[i].mesh.material_ids[0]].shininess;
 		//float diffuse[] = { 0, 0, 1.0 };
 		material[0] = diffuse[0];
 		material[1] = diffuse[1];
 		material[2] = diffuse[2];
 
-		//glMaterialfv(GL_FRONT, GL_SPECULAR, whiteSpecularMaterial);
-		//glMaterialfv(GL_FRONT, GL_SHININESS, mShininess);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, whiteSpecularMaterial);
+		glMaterialfv(GL_FRONT, GL_SHININESS, mShininess);
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, material);
 
 		glTexCoordPointer(2, GL_FLOAT, 0, shapes[i].mesh.texcoords.data());
 		glVertexPointer(3, GL_FLOAT, 0, shapes[i].mesh.positions.data());
 		glNormalPointer(GL_FLOAT, 0, shapes[i].mesh.normals.data());
 
-		glDrawElements(GL_TRIANGLES, shapes[i].mesh.indices.size(), GL_UNSIGNED_INT, shapes[i].mesh.indices.data());
+		glDrawElements(GL_TRIANGLES, shapes[i].mesh.indices.size(), GL_UNSIGNED_INT, shapes[i].mesh.indices.data());*/
+		if(q == -1 || q == i)
+			draw(shapes[i], materials[shapes[i].mesh.material_ids[0]]);
 	}
 
 	//glVertexPointer(3, GL_FLOAT, 0, shapes[0].mesh.positions.data());
@@ -98,21 +119,18 @@ void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::materia
 	//glVertexPointer(3, GL_FLOAT, 0, shapes[0].mesh.positions.data());
 	//glDrawArrays(GL_TRIANGLES, 0, shapes[0].mesh.positions.size());
 
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_NORMAL_ARRAY);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	//glDisableClientState(GL_VERTEX_ARRAY);
+	//glDisableClientState(GL_NORMAL_ARRAY);
+	//glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	glPopMatrix();
 
-	glPushMatrix();
-	glTranslatef(0, 0, 5);
-	//glutSolidTeapot(2);
 	glPopMatrix();
 
 	//glutSwapBuffers();
 
-	int err = GL_NO_ERROR;
+	/*int err = GL_NO_ERROR;
 	if ((err = glGetError()) != GL_NO_ERROR)
-		std::cout << "Error: " << err << std::endl;
+		std::cout << "Error: " << err << std::endl;*/
 }
 
 void init(sf::Window& window)
@@ -127,6 +145,9 @@ void init(sf::Window& window)
 	glShadeModel(GL_SMOOTH);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_TEXTURE_2D);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	resize(window);
 }
 
@@ -138,22 +159,25 @@ int main(int argc, char** argv)
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 
-	std::vector<std::string> inputfiles;
+	std::vector<tinyobj::shape_t> showroom;
+	std::vector<tinyobj::material_t> showroom_mat;
+
+	std::vector<tinyobj::shape_t> abarth;
+	std::vector<tinyobj::material_t> abarth_mat;
+
+	/*std::string inputfile;
 	std::string inputdir;
 
-	if (argc >= 3)
+	if (argc = 3)
 	{
 		inputdir = argv[1];
-		for (int i = 2; i < argc; ++i)
-			inputfiles.push_back(argv[i]);
+		inputfile = argv[2];
 	}
-	else
+	else if(argc > 3)
 	{
-		std::string in;
 		std::cin >> inputdir;
-		std::cin >> in;
-		inputfiles.push_back(in);
-	}
+		std::cin >> inputfile;
+	}*/
 
 	//std::vector<tinyobj::shape_t> shapes;
 	//std::vector<tinyobj::material_t> materials;
@@ -165,8 +189,18 @@ int main(int argc, char** argv)
 	std::string err;
 	bool ret = false;
 
-	for (int i = 0; i < inputfiles.size(); ++i)
-		ret = tinyobj::LoadObj(shapes, materials, err, (inputdir + inputfiles.at(i)).c_str(), inputdir.c_str());
+	/*if(!inputfile.empty())
+		ret = tinyobj::LoadObj(shapes, materials, err, (inputdir + inputfile).c_str(), inputdir.c_str());
+
+	if (!err.empty()) { // `err` may contain warning message.
+		std::cout << err << std::endl;
+	}
+
+	if (!ret) {
+		exit(1);
+	}*/
+	std::string dir = "../Models/";
+	ret = tinyobj::LoadObj(showroom, showroom_mat, err, (dir+"Showroom.obj").c_str(), "../Models/");
 
 	if (!err.empty()) { // `err` may contain warning message.
 		std::cout << err << std::endl;
@@ -176,8 +210,18 @@ int main(int argc, char** argv)
 		exit(1);
 	}
 
-	std::cout << "# of shapes    : " << shapes.size() << std::endl;
-	std::cout << "# of materials : " << materials.size() << std::endl;
+	ret = tinyobj::LoadObj(abarth, abarth_mat, err, (dir+"fiat500blandswap_low.obj").c_str(), "../Models/");
+
+	if (!err.empty()) { // `err` may contain warning message.
+		std::cout << err << std::endl;
+	}
+
+	if (!ret) {
+		exit(1);
+	}
+
+	//std::cout << "# of shapes    : " << shapes.size() << std::endl;
+	//std::cout << "# of materials : " << materials.size() << std::endl;
 
 	//OpenGL stuff
 	init(window);
@@ -191,24 +235,25 @@ int main(int argc, char** argv)
 
 	//Texture
 	sf::Image texfile;
-	if (texfile.loadFromFile("../TestTex.png") == 0)
+	/*if (texfile.loadFromFile("../TestTex.png") == 0)
 	{
 		std::cout << "can not load texture...\n";
 		return 666;
-	}
+	}*/
 
-	GLuint tex;
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	//GLuint tex;
+	//glGenTextures(1, &tex);
+	//glBindTexture(GL_TEXTURE_2D, tex);
+	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texfile.getSize().x, texfile.getSize().y, 0, GL_RGBA, GL_UNSIGNED_BYTE, texfile.getPixelsPtr());
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texfile.getSize().x, texfile.getSize().y, 0, GL_RGBA, GL_UNSIGNED_BYTE, texfile.getPixelsPtr());*/
 	//***
 
 	//main loop
+	int cnt = 0;
 	bool quit = false;
 	while (!quit)
 	{
@@ -232,7 +277,7 @@ int main(int argc, char** argv)
 			{
 				if (event.key.code == sf::Keyboard::Escape)
 					quit = true;
-				else if(event.key.code == sf::Keyboard::Num1)
+				else if (event.key.code == sf::Keyboard::Num1)
 					std::cout << cam_h << std::endl;
 			}
 		}
@@ -249,6 +294,11 @@ int main(int argc, char** argv)
 
 		while (cam_v > 360.0) cam_v -= 360.0f;
 		while (cam_v < 0.0) cam_v += 360.0f;
+
+		if (cam_v < 270.0f && cam_v > 180.0f)
+			cam_v = 271.0f;
+		else if (cam_v > 90.0f && cam_v < 180.0f)
+			cam_v = 89.0f;
 		//***
 
 		//Keyboard Input
@@ -292,10 +342,22 @@ int main(int argc, char** argv)
 		glTranslatef(cam_x, cam_y, cam_z);
 
 		// draw...
-		display(shapes, materials, texfile);
+		light();
+		display(showroom, showroom_mat, 0, 0, 0, 0, Q_ALL);
+		display(abarth, abarth_mat, 0, 1.3f, 0, 0, Q_ALL);
+		display(abarth, abarth_mat, 10, 1.3f, 0, 25.0f, Q_ALL);
+		display(abarth, abarth_mat, 0, 1.3f, 10, 180.0f, Q_ALL);
 
 		// end the current frame (internally swaps the front and back buffers)
 		window.display();
+
+		if (cnt == 100)
+		{
+			//std::cout << cam_x << "\t" << cam_y << "\t" << cam_z << "\t" << cam_h << "\t" << cam_v << std::endl;
+			std::cout << 1 / dt << std::endl;
+			cnt = 0;
+		}
+		cnt++;
 
 		mouse_old = sf::Vector2f(sf::Mouse::getPosition());
 		dt = clock.getElapsedTime().asSeconds();
