@@ -45,7 +45,7 @@ void resize(sf::Window& window)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	GLfloat ratio = static_cast<float>(window.getSize().x) / window.getSize().y;
-	glFrustum(-ratio, ratio, -1.f, 1.f, 1.f, 500.f);
+	glFrustum(-ratio, ratio, -1.f, 1.f, 1.f, 100.f);
 	glMatrixMode(GL_MODELVIEW);
 }
 
@@ -79,7 +79,7 @@ void draw(tinyobj::shape_t& shape, tinyobj::material_t& mat)
 	glDrawElements(GL_TRIANGLES, shape.mesh.indices.size(), GL_UNSIGNED_INT, shape.mesh.indices.data());
 }
 
-void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::material_t>& materials, float x, float y, float z, float yrot, Quality q)
+void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::material_t>& materials, float x, float y, float z, float yrot)
 {
 	GLfloat material[] = { 1.0, 0.0, 1.0 };
 	//glMaterialfv(GL_FRONT, GL_DIFFUSE, material);
@@ -108,8 +108,7 @@ void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::materia
 		glNormalPointer(GL_FLOAT, 0, shapes[i].mesh.normals.data());
 
 		glDrawElements(GL_TRIANGLES, shapes[i].mesh.indices.size(), GL_UNSIGNED_INT, shapes[i].mesh.indices.data());*/
-		if(q == -1 || q == i)
-			draw(shapes[i], materials[shapes[i].mesh.material_ids[0]]);
+		draw(shapes[i], materials[shapes[i].mesh.material_ids[0]]);
 	}
 
 	//glVertexPointer(3, GL_FLOAT, 0, shapes[0].mesh.positions.data());
@@ -165,6 +164,11 @@ int main(int argc, char** argv)
 	std::vector<tinyobj::shape_t> abarth;
 	std::vector<tinyobj::material_t> abarth_mat;
 
+	std::vector<std::vector<tinyobj::shape_t>> universe;
+	std::vector<std::vector<tinyobj::material_t>> universe_mat;
+
+	std::vector<float> abarths;
+
 	/*std::string inputfile;
 	std::string inputdir;
 
@@ -200,22 +204,43 @@ int main(int argc, char** argv)
 		exit(1);
 	}*/
 	std::string dir = "../Models/";
-	ret = tinyobj::LoadObj(showroom, showroom_mat, err, (dir+"Showroom.obj").c_str(), "../Models/");
 
+	ret = tinyobj::LoadObj(shapes, materials, err, (dir+"Showroom.obj").c_str(), "../Models/");
+	universe.push_back(shapes);
+	universe_mat.push_back(materials);
 	if (!err.empty()) { // `err` may contain warning message.
 		std::cout << err << std::endl;
 	}
-
 	if (!ret) {
 		exit(1);
 	}
 
-	ret = tinyobj::LoadObj(abarth, abarth_mat, err, (dir+"fiat500blandswap_low.obj").c_str(), "../Models/");
-
+	ret = tinyobj::LoadObj(shapes, materials, err, (dir + "fiat500blandswap_low.obj").c_str(), "../Models/");
+	universe.push_back(shapes);
+	universe_mat.push_back(materials);
 	if (!err.empty()) { // `err` may contain warning message.
 		std::cout << err << std::endl;
 	}
+	if (!ret) {
+		exit(1);
+	}
 
+	ret = tinyobj::LoadObj(shapes, materials, err, (dir + "fiat500blandswap_mid.obj").c_str(), "../Models/");
+	universe.push_back(shapes);
+	universe_mat.push_back(materials);
+	if (!err.empty()) { // `err` may contain warning message.
+		std::cout << err << std::endl;
+	}
+	if (!ret) {
+		exit(1);
+	}
+
+	ret = tinyobj::LoadObj(shapes, materials, err, (dir + "fiat500blandswap_high.obj").c_str(), "../Models/");
+	universe.push_back(shapes);
+	universe_mat.push_back(materials);
+	if (!err.empty()) { // `err` may contain warning message.
+		std::cout << err << std::endl;
+	}
 	if (!ret) {
 		exit(1);
 	}
@@ -254,6 +279,7 @@ int main(int argc, char** argv)
 
 	//main loop
 	int cnt = 0;
+	int meshSwitch = 0;
 	bool quit = false;
 	while (!quit)
 	{
@@ -279,6 +305,14 @@ int main(int argc, char** argv)
 					quit = true;
 				else if (event.key.code == sf::Keyboard::Num1)
 					std::cout << cam_h << std::endl;
+				else if (event.key.code == sf::Keyboard::Num2)
+				{
+					if (meshSwitch < 3)
+						++meshSwitch;
+					else
+						meshSwitch = 0;
+					std::cout << meshSwitch << std::endl;
+				}
 			}
 		}
 
@@ -343,15 +377,19 @@ int main(int argc, char** argv)
 
 		// draw...
 		light();
-		display(showroom, showroom_mat, 0, 0, 0, 0, Q_ALL);
-		display(abarth, abarth_mat, 0, 1.3f, 0, 0, Q_ALL);
-		display(abarth, abarth_mat, 10, 1.3f, 0, 25.0f, Q_ALL);
-		display(abarth, abarth_mat, 0, 1.3f, 10, 180.0f, Q_ALL);
+		display(universe[0], universe_mat[0], 0, 0, 0, 0);
 
-		// end the current frame (internally swaps the front and back buffers)
+		if(meshSwitch == 0)
+			display(universe[1], universe_mat[1], 0, 1.3f, 0, 0);
+		else if(meshSwitch == 1)
+			display(universe[2], universe_mat[2], 0, 1.3f, 0, 0);
+		else
+			display(universe[3], universe_mat[3], 0, 1.3f, 0, 0);
+
+		//end the current frame (internally swaps the front and back buffers)
 		window.display();
 
-		if (cnt == 100)
+		if (cnt == 1000)
 		{
 			//std::cout << cam_x << "\t" << cam_y << "\t" << cam_z << "\t" << cam_h << "\t" << cam_v << std::endl;
 			std::cout << 1 / dt << std::endl;

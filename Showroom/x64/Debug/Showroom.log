@@ -1,4 +1,4 @@
-﻿Build started 09.12.2015 20:56:29.
+﻿Build started 10.12.2015 22:54:12.
      1>Project "G:\FH\Sem5\CSE\Showroom\Showroom\Showroom.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          G:\Programme\Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"..\..\SFML-2.3.2\include" /I..\..\tinyobjloader /ZI /nologo /W3 /WX- /Od /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"x64\Debug\\" /Fd"x64\Debug\vc140.pdb" /Gd /TP /errorReport:prompt Showroom_OpenGL.cpp
@@ -12,4 +12,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:03.46
+Time Elapsed 00:00:04.18
