@@ -27,9 +27,15 @@
     <ClCompile Include="Showroom_OpenGL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="universe.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\tinyobjloader\tiny_obj_loader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="universe.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
