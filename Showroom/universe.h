@@ -27,6 +27,7 @@ public:
 	void draw(tinyobj::shape_t& shape, tinyobj::material_t& mat);
 	void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::material_t>& materials, sf::Vector3f& pos, float yrot);
 	void init();
+	float distance(sf::Vector3f& a, sf::Vector3f& b);
 private:
 	std::vector<std::vector<tinyobj::shape_t>> objects;
 	std::vector<std::vector<tinyobj::material_t>> objects_mat;

@@ -49,7 +49,7 @@ void universe::resize()
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	GLfloat ratio = static_cast<float>(m_window.getSize().x) / m_window.getSize().y;
-	glFrustum(-ratio, ratio, -1.f, 1.f, 1.f, 100.f);
+	glFrustum(-ratio, ratio, -1.f, 1.f, 1.f, 300.f);
 	glMatrixMode(GL_MODELVIEW);
 }
 
@@ -88,8 +88,8 @@ void universe::display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyob
 	GLfloat material[] = { 1.0, 0.0, 1.0 };
 	//glMaterialfv(GL_FRONT, GL_DIFFUSE, material);
 	glPushMatrix();
-	glRotatef(yrot, 0, 1, 0);
 	glTranslatef(pos.x, pos.y, pos.z);
+	glRotatef(yrot, 0, 1, 0);
 
 	glPushMatrix();
 
@@ -154,10 +154,24 @@ void universe::init()
 	resize();
 }
 
+float universe::distance(sf::Vector3f& a, sf::Vector3f& b)
+{
+	sf::Vector3f diff(a - b);
+
+	float dist = sqrt(pow(diff.x, 2) + pow(diff.y, 2) + pow(diff.z, 2));
+	return dist;
+}
+
 void universe::run()
 {
 	sf::Vector2f mouse_old(0, 0);
-	abarths.push_back(sf::Vector3f(0, 1.3f, 0));
+
+	sf::Vector3f tmppos(0, 1.3f, -15.0);
+	for (int i = 0; i <= 3; ++i)
+	{
+		tmppos.z += 15.0f;
+		abarths.push_back(tmppos);
+	}
 
 	init();
 
@@ -227,24 +241,24 @@ void universe::run()
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
 			moveSpeed *= 2.0f;
 
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
 		{
 			m_camPos.z -= moveSpeed * dt * -sinf((m_camRot.y*pi) / 180.0f);
 			m_camPos.x += moveSpeed * dt * cosf((m_camRot.y*pi) / 180.0f);
 		}
-		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
 		{
 			m_camPos.z += moveSpeed * dt * -sinf((m_camRot.y*pi) / 180.0f);
 			m_camPos.x -= moveSpeed * dt * cosf((m_camRot.y*pi) / 180.0f);
 		}
 
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
 		{
 			m_camPos.z += moveSpeed * dt * cosf((m_camRot.y*pi) / 180.0f);
 			m_camPos.x -= moveSpeed * dt * sinf((m_camRot.y*pi) / 180.0f);
 			m_camPos.y += moveSpeed * dt * sinf((m_camRot.x*pi) / 180.0f);
 		}
-		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
 		{
 			m_camPos.z -= moveSpeed * dt * cosf((m_camRot.y*pi) / 180.0f);
 			m_camPos.x += moveSpeed * dt * sinf((m_camRot.y*pi) / 180.0f);
@@ -258,26 +272,44 @@ void universe::run()
 
 		glRotatef(m_camRot.x, 1, 0, 0);
 		glRotatef(m_camRot.y, 0, 1, 0);
-		glTranslatef(m_camPos.x, m_camPos.y, m_camPos.z);
+		glTranslatef(-m_camPos.x, -m_camPos.y, -m_camPos.z);
 
 		// draw...
 		light();
 		display(objects[0], objects_mat[0], sf::Vector3f(0,0,0), 0);
 
-		if (meshSwitch == 0)
-			display(objects[1], objects_mat[1], abarths[0], 0);
-		else if (meshSwitch == 1)
-			display(objects[2], objects_mat[2], abarths[0], 0);
-		else
-			display(objects[3], objects_mat[3], abarths[0], 0);
+		float dist;
+		for (int i = 0; i < abarths.size(); ++i)
+		{
+			dist = distance(m_camPos, abarths[i]);
 
+			meshSwitch = 2;
+			if (dist > 15.0f)
+				meshSwitch = 1;
+			if (dist > 30.0f)
+				meshSwitch = 0;
+
+			/*if (meshSwitch == 0)
+				display(objects[1], objects_mat[1], abarths[i], 0);
+			else if (meshSwitch == 1)
+				display(objects[1], objects_mat[1], abarths[i], 45.0f);
+			else
+				display(objects[1], objects_mat[1], abarths[i], 90.0f);*/
+
+			if (meshSwitch == 0)
+				display(objects[1], objects_mat[1], abarths[i], 0);
+			else if (meshSwitch == 1)
+				display(objects[2], objects_mat[2], abarths[i], 0);
+			else
+				display(objects[3], objects_mat[3], abarths[i], 0);
+		}
 		//end the current frame (internally swaps the front and back buffers)
 		m_window.display();
 
-		if (cnt == 1000)
+		if (cnt == 100)
 		{
 			//std::cout << cam_x << "\t" << cam_y << "\t" << cam_z << "\t" << cam_h << "\t" << cam_v << std::endl;
-			std::cout << 1 / dt << std::endl;
+			std::cout << 1 / dt << " : " << dist  << ": " << meshSwitch << std::endl;
 			cnt = 0;
 		}
 		cnt++;
