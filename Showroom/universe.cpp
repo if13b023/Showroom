@@ -35,6 +35,25 @@ bool universe::addObject(char* dir, char* file)
 		exit(1);
 	}
 
+	for (int i = 0; i < materials.size(); ++i)
+	{
+		if (materials.at(i).diffuse_texname.empty())
+			break;
+
+		sf::Image img;
+		img.loadFromFile(materials.at(i).diffuse_texname);
+		textures.push_back(img);
+
+		glGenTextures(1, &(texturesIds[i]));
+		glBindTexture(GL_TEXTURE_2D, texturesIds[i]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+		glTexImage2D(GL_TEXTURE_2D, 0, 3, textures[i].getSize().x, textures[i].getSize().y, 0, GL_RGBA, GL_UNSIGNED_BYTE, textures[i].getPixelsPtr());
+	}
+
 	return ret;
 }
 
@@ -55,7 +74,7 @@ void universe::resize()
 
 void universe::light()
 {
-	GLfloat lightPos[] = { 0.0f, 10.0f, 0.0f , 1.0f };
+	GLfloat lightPos[] = { 0.0f, 8.0f, 0.0f , 0.0f };
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, whiteDiffuseLight);
@@ -92,7 +111,7 @@ void universe::display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyob
 	glRotatef(yrot, 0, 1, 0);
 
 	glPushMatrix();
-
+	glEnable(GL_TEXTURE_2D);
 	//use: glDrawElements
 	for (int i = 0; i < shapes.size(); ++i)
 	{
@@ -112,6 +131,8 @@ void universe::display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyob
 		glNormalPointer(GL_FLOAT, 0, shapes[i].mesh.normals.data());
 
 		glDrawElements(GL_TRIANGLES, shapes[i].mesh.indices.size(), GL_UNSIGNED_INT, shapes[i].mesh.indices.data());*/
+		glBindTexture(GL_TEXTURE_2D, texturesIds[shapes[i].mesh.material_ids[0]]);
+
 		draw(shapes[i], materials[shapes[i].mesh.material_ids[0]]);
 	}
 
@@ -289,24 +310,24 @@ void universe::run()
 			if (dist > 30.0f)
 				meshSwitch = 0;
 
-			/*if (meshSwitch == 0)
+			if (meshSwitch == 0)
 				display(objects[1], objects_mat[1], abarths[i], 0);
 			else if (meshSwitch == 1)
 				display(objects[1], objects_mat[1], abarths[i], 45.0f);
 			else
-				display(objects[1], objects_mat[1], abarths[i], 90.0f);*/
+				display(objects[1], objects_mat[1], abarths[i], 90.0f);
 
-			if (meshSwitch == 0)
+			/*if (meshSwitch == 0)
 				display(objects[1], objects_mat[1], abarths[i], 0);
 			else if (meshSwitch == 1)
 				display(objects[2], objects_mat[2], abarths[i], 0);
 			else
-				display(objects[3], objects_mat[3], abarths[i], 0);
+				display(objects[3], objects_mat[3], abarths[i], 0);*/
 		}
 		//end the current frame (internally swaps the front and back buffers)
 		m_window.display();
 
-		if (cnt == 100)
+		if (cnt == 100 && false)
 		{
 			//std::cout << cam_x << "\t" << cam_y << "\t" << cam_z << "\t" << cam_h << "\t" << cam_v << std::endl;
 			std::cout << 1 / dt << " : " << dist  << ": " << meshSwitch << std::endl;

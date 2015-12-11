@@ -26,10 +26,10 @@ int main(int argc, char** argv)
 
 	char* dir = "../Models/";
 
-	u.addObject(dir, "Showroom.obj");
+	u.addObject(dir, "Showroom2.obj");
 	u.addObject(dir, "fiat500blandswap_low.obj");
-	u.addObject(dir, "fiat500blandswap_mid.obj");
-	u.addObject(dir, "fiat500blandswap_high.obj");
+	//u.addObject(dir, "fiat500blandswap_mid.obj");
+	//u.addObject(dir, "fiat500blandswap_high.obj");
 
 	u.run();
 

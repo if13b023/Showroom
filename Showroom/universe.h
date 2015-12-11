@@ -34,6 +34,9 @@ private:
 
 	std::vector<sf::Vector3f> abarths;
 
+	std::vector<sf::Image> textures;
+	GLuint texturesIds[16];
+
 	/*float	cam_z = 0.0f,
 		cam_x = 0.0f,
 		cam_y = -10.0f,
@@ -51,13 +54,13 @@ private:
 
 	//bool toggleColor = false;
 
-	GLfloat redDiffuseMaterial[3] = { 1.0, 0.0, 0.0 }; //set the material to red
-	GLfloat whiteSpecularMaterial[3] = { 1.0, 1.0, 1.0 }; //set the material to white
-	GLfloat greenEmissiveMaterial[3] = { 0.0, 1.0, 0.0 }; //set the material to green
-	GLfloat whiteSpecularLight[3] = { 1.0, 1.0, 1.0 }; //set the light specular to white
-	GLfloat blackAmbientLight[3] = { 0.5, 0.5, 0.5 }; //set the light ambient to black
-	GLfloat whiteDiffuseLight[3] = { 1.0, 1.0, 1.0 }; //set the diffuse light to white
-	GLfloat blankMaterial[3] = { 0.0, 0.0, 0.0 }; //set the diffuselight to white
+	GLfloat redDiffuseMaterial[3] = { 1.0f, 0.0f, 0.0f }; //set the material to red
+	GLfloat whiteSpecularMaterial[3] = { 1.0f, 1.0f, 1.0f }; //set the material to white
+	GLfloat greenEmissiveMaterial[3] = { 0.0f, 1.0f, 0.0f }; //set the material to green
+	GLfloat whiteSpecularLight[3] = { 1.0f, 1.0f, 1.0f }; //set the light specular to white
+	GLfloat blackAmbientLight[3] = { 0.1f, 0.1f, 0.1f }; //set the light ambient to black
+	GLfloat whiteDiffuseLight[3] = { 1.0f, 1.0f, 1.0f }; //set the diffuse light to white
+	GLfloat blankMaterial[3] = { 0.0f, 0.0f, 0.0f }; //set the diffuselight to white
 	GLfloat mShininess[1] = { 64 }; //set the shininess of the material
 
 	enum Quality { Q_LOW = 2, Q_MID = 1, Q_HIGH = 0, Q_ALL = -1 };
