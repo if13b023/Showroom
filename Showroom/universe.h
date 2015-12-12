@@ -25,12 +25,18 @@ public:
 	void resize();
 	void light();
 	void draw(tinyobj::shape_t& shape, tinyobj::material_t& mat);
-	void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::material_t>& materials, sf::Vector3f& pos, float yrot);
+	void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::material_t>& materials, sf::Vector3f& pos, float yrot, bool drawTrans = false);
+	void drawTransparent();
 	void init();
 	float distance(sf::Vector3f& a, sf::Vector3f& b);
 private:
 	std::vector<std::vector<tinyobj::shape_t>> objects;
 	std::vector<std::vector<tinyobj::material_t>> objects_mat;
+
+	std::vector<tinyobj::shape_t> transparents;
+	std::vector<tinyobj::material_t> transparents_mat;
+	std::vector<sf::Vector3f> transparent_pos;
+	std::vector<float> transparent_rot;
 
 	std::vector<sf::Vector3f> abarths;
 

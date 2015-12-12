@@ -4,7 +4,9 @@
 
 universe::universe()
 {
-	m_window.create(sf::VideoMode(800, 600), "Showroom OpenGL", sf::Style::Default, sf::ContextSettings(32));
+	sf::ContextSettings ctxSettings;
+	ctxSettings.depthBits = 24;
+	m_window.create(sf::VideoMode(800, 600), "Showroom OpenGL", sf::Style::Default, ctxSettings);
 }
 
 universe::~universe()
@@ -84,16 +86,16 @@ void universe::light()
 
 void universe::draw(tinyobj::shape_t & shape, tinyobj::material_t & mat)
 {
-	float* diffuse = mat.diffuse;
-	mShininess[0] = mat.shininess;
+	//float* diffuse = mat.diffuse;
+	//mShininess[0] = mat.shininess;
 
-	//material[0] = diffuse[0];
-	//material[1] = diffuse[1];
-	//material[2] = diffuse[2];
+	float diffuse[4];
+	memcpy(diffuse, mat.diffuse, 3 * sizeof(float));
+	diffuse[3] = mat.dissolve;
 
-	glMaterialfv(GL_FRONT, GL_SPECULAR, whiteSpecularMaterial);
-	glMaterialfv(GL_FRONT, GL_SHININESS, mShininess);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat.diffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat.specular);
+	glMaterialf(GL_FRONT, GL_SHININESS, mat.shininess);
 
 	glTexCoordPointer(2, GL_FLOAT, 0, shape.mesh.texcoords.data());
 	glVertexPointer(3, GL_FLOAT, 0, shape.mesh.positions.data());
@@ -102,16 +104,13 @@ void universe::draw(tinyobj::shape_t & shape, tinyobj::material_t & mat)
 	glDrawElements(GL_TRIANGLES, shape.mesh.indices.size(), GL_UNSIGNED_INT, shape.mesh.indices.data());
 }
 
-void universe::display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::material_t>& materials, sf::Vector3f & pos, float yrot)
+void universe::display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::material_t>& materials, sf::Vector3f & pos, float yrot, bool drawTrans)
 {
-	GLfloat material[] = { 1.0, 0.0, 1.0 };
-	//glMaterialfv(GL_FRONT, GL_DIFFUSE, material);
 	glPushMatrix();
 	glTranslatef(pos.x, pos.y, pos.z);
 	glRotatef(yrot, 0, 1, 0);
 
 	glPushMatrix();
-	glEnable(GL_TEXTURE_2D);
 	//use: glDrawElements
 	for (int i = 0; i < shapes.size(); ++i)
 	{
@@ -131,6 +130,16 @@ void universe::display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyob
 		glNormalPointer(GL_FLOAT, 0, shapes[i].mesh.normals.data());
 
 		glDrawElements(GL_TRIANGLES, shapes[i].mesh.indices.size(), GL_UNSIGNED_INT, shapes[i].mesh.indices.data());*/
+		if (drawTrans == false && materials[shapes[i].mesh.material_ids[0]].dissolve < 1.0f)
+		{
+			transparents.push_back(shapes[i]);
+			transparents_mat.push_back(materials[shapes[i].mesh.material_ids[0]]);
+			transparent_pos.push_back(pos);
+			transparent_rot.push_back(yrot);
+
+			continue;
+		}
+
 		glBindTexture(GL_TEXTURE_2D, texturesIds[shapes[i].mesh.material_ids[0]]);
 
 		draw(shapes[i], materials[shapes[i].mesh.material_ids[0]]);
@@ -157,6 +166,19 @@ void universe::display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyob
 	std::cout << "Error: " << err << std::endl;*/
 }
 
+void universe::drawTransparent()
+{
+	for (int i = 0; i < transparents.size(); ++i)
+	{
+		glPushMatrix();
+		glTranslatef(transparent_pos.at(i).x, transparent_pos.at(i).y, transparent_pos.at(i).z);
+		glRotatef(transparent_rot.at(i), 0, 1, 0);
+
+		draw(transparents.at(i), transparents_mat.at(i));
+		glPopMatrix();
+	}
+}
+
 void universe::init()
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -169,6 +191,8 @@ void universe::init()
 	glShadeModel(GL_SMOOTH);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_TEXTURE_2D);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_NORMAL_ARRAY);
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -310,22 +334,33 @@ void universe::run()
 			if (dist > 30.0f)
 				meshSwitch = 0;
 
-			if (meshSwitch == 0)
+			/*if (meshSwitch == 0)
 				display(objects[1], objects_mat[1], abarths[i], 0);
 			else if (meshSwitch == 1)
 				display(objects[1], objects_mat[1], abarths[i], 45.0f);
 			else
-				display(objects[1], objects_mat[1], abarths[i], 90.0f);
+				display(objects[1], objects_mat[1], abarths[i], 90.0f);*/
 
-			/*if (meshSwitch == 0)
+			if (meshSwitch == 0)
 				display(objects[1], objects_mat[1], abarths[i], 0);
 			else if (meshSwitch == 1)
 				display(objects[2], objects_mat[2], abarths[i], 0);
 			else
-				display(objects[3], objects_mat[3], abarths[i], 0);*/
+				display(objects[3], objects_mat[3], abarths[i], 0);
 		}
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
+		drawTransparent();
+		glDisable(GL_BLEND);
+
 		//end the current frame (internally swaps the front and back buffers)
 		m_window.display();
+
+		transparents.clear();
+		transparents_mat.clear();
+		transparent_pos.clear();
+		transparent_rot.clear();
 
 		if (cnt == 100 && false)
 		{
