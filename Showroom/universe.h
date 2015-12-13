@@ -14,6 +14,23 @@
 #include <SFML\OpenGL.hpp>
 #include <SFML\Graphics\Image.hpp>
 
+typedef struct {
+	GLuint id;
+	sf::Image texture;
+} texture_t;
+
+typedef struct {
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::vector<texture_t> textures;
+} object_t;
+
+typedef struct {
+	object_t* object;
+	sf::Vector3f position;
+	sf::Vector3f rotation;
+} sceneobj;
+
 class universe
 {
 public:
@@ -22,32 +39,22 @@ public:
 
 	bool addObject(char* dir, char* file);
 	void run();
+
+private:
 	void resize();
 	void light();
 	void draw(tinyobj::shape_t& shape, tinyobj::material_t& mat);
-	void display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::material_t>& materials, sf::Vector3f& pos, float yrot, bool drawTrans = false);
-	void drawTransparent();
+	void display(sceneobj& o, bool drawTrans = false);
 	void init();
 	float distance(sf::Vector3f& a, sf::Vector3f& b);
-private:
-	std::vector<std::vector<tinyobj::shape_t>> objects;
-	std::vector<std::vector<tinyobj::material_t>> objects_mat;
 
-	std::vector<tinyobj::shape_t> transparents;
-	std::vector<tinyobj::material_t> transparents_mat;
-	std::vector<sf::Vector3f> transparent_pos;
-	std::vector<float> transparent_rot;
+	//std::vector<sf::Vector3f> abarths;
 
-	std::vector<sf::Vector3f> abarths;
+	std::vector<object_t> objects;
 
-	std::vector<sf::Image> textures;
-	GLuint texturesIds[16];
+	std::vector<sceneobj> scene;
+	std::vector<sceneobj> sceneTrans;
 
-	/*float	cam_z = 0.0f,
-		cam_x = 0.0f,
-		cam_y = -10.0f,
-		cam_h = 90.0f,
-		cam_v = 0.0f;*/
 	sf::Window m_window;
 
 	sf::Clock clock;
@@ -57,8 +64,6 @@ private:
 	sf::Vector2f m_camRot;
 
 	sf::Vector3f m_light;
-
-	//bool toggleColor = false;
 
 	GLfloat redDiffuseMaterial[3] = { 1.0f, 0.0f, 0.0f }; //set the material to red
 	GLfloat whiteSpecularMaterial[3] = { 1.0f, 1.0f, 1.0f }; //set the material to white

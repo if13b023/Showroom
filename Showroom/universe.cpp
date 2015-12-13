@@ -28,8 +28,7 @@ bool universe::addObject(char* dir, char* file)
 	std::vector<tinyobj::material_t> materials;
 
 	ret = tinyobj::LoadObj(shapes, materials, err, comp, dir);
-	objects.push_back(shapes);
-	objects_mat.push_back(materials);
+
 	if (!err.empty()) { // `err` may contain warning message.
 		std::cout << err << std::endl;
 	}
@@ -37,24 +36,40 @@ bool universe::addObject(char* dir, char* file)
 		exit(1);
 	}
 
+	object_t tmp;
+	tmp.shapes = shapes;
+	tmp.materials = materials;
+
 	for (int i = 0; i < materials.size(); ++i)
 	{
-		if (materials.at(i).diffuse_texname.empty())
-			break;
+		//if (materials.at(i).diffuse_texname.empty())
+		//	break;
+
+		texture_t tex;
+		glGenTextures(1, &tex.id);
 
 		sf::Image img;
 		img.loadFromFile(materials.at(i).diffuse_texname);
-		textures.push_back(img);
 
-		glGenTextures(1, &(texturesIds[i]));
-		glBindTexture(GL_TEXTURE_2D, texturesIds[i]);
+		if (materials.at(i).diffuse_texname.empty())
+		{
+			tmp.textures.push_back(tex);
+			continue;
+		}
+		
+		tex.texture = img;
+
+		glBindTexture(GL_TEXTURE_2D, tex.id);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, 3, textures[i].getSize().x, textures[i].getSize().y, 0, GL_RGBA, GL_UNSIGNED_BYTE, textures[i].getPixelsPtr());
+		glTexImage2D(GL_TEXTURE_2D, 0, 3, tex.texture.getSize().x, tex.texture.getSize().y, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.texture.getPixelsPtr());
+		tmp.textures.push_back(tex);
 	}
+
+	objects.push_back(tmp);
 
 	return ret;
 }
@@ -76,7 +91,7 @@ void universe::resize()
 
 void universe::light()
 {
-	GLfloat lightPos[] = { 0.0f, 8.0f, 0.0f , 0.0f };
+	GLfloat lightPos[] = { 0.0f, 8.0f, 0.0f , 1.0f };
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, whiteDiffuseLight);
@@ -89,9 +104,9 @@ void universe::draw(tinyobj::shape_t & shape, tinyobj::material_t & mat)
 	//float* diffuse = mat.diffuse;
 	//mShininess[0] = mat.shininess;
 
-	float diffuse[4];
+	/*float diffuse[4];
 	memcpy(diffuse, mat.diffuse, 3 * sizeof(float));
-	diffuse[3] = mat.dissolve;
+	diffuse[3] = mat.dissolve;*/
 
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat.diffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, mat.specular);
@@ -104,79 +119,37 @@ void universe::draw(tinyobj::shape_t & shape, tinyobj::material_t & mat)
 	glDrawElements(GL_TRIANGLES, shape.mesh.indices.size(), GL_UNSIGNED_INT, shape.mesh.indices.data());
 }
 
-void universe::display(std::vector<tinyobj::shape_t>& shapes, std::vector<tinyobj::material_t>& materials, sf::Vector3f & pos, float yrot, bool drawTrans)
+void universe::display(sceneobj& o, bool drawTrans)
 {
 	glPushMatrix();
-	glTranslatef(pos.x, pos.y, pos.z);
-	glRotatef(yrot, 0, 1, 0);
+	glTranslatef(o.position.x, o.position.y, o.position.z);
+	glRotatef(o.rotation.y, 0, 1, 0);
 
 	glPushMatrix();
 	//use: glDrawElements
-	for (int i = 0; i < shapes.size(); ++i)
+	for (int i = 0; i < o.object->shapes.size(); ++i)
 	{
-		/*float* diffuse = materials[shapes[i].mesh.material_ids[0]].diffuse;
-		mShininess[0] = materials[shapes[i].mesh.material_ids[0]].shininess;
-		//float diffuse[] = { 0, 0, 1.0 };
-		material[0] = diffuse[0];
-		material[1] = diffuse[1];
-		material[2] = diffuse[2];
-
-		glMaterialfv(GL_FRONT, GL_SPECULAR, whiteSpecularMaterial);
-		glMaterialfv(GL_FRONT, GL_SHININESS, mShininess);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, material);
-
-		glTexCoordPointer(2, GL_FLOAT, 0, shapes[i].mesh.texcoords.data());
-		glVertexPointer(3, GL_FLOAT, 0, shapes[i].mesh.positions.data());
-		glNormalPointer(GL_FLOAT, 0, shapes[i].mesh.normals.data());
-
-		glDrawElements(GL_TRIANGLES, shapes[i].mesh.indices.size(), GL_UNSIGNED_INT, shapes[i].mesh.indices.data());*/
-		if (drawTrans == false && materials[shapes[i].mesh.material_ids[0]].dissolve < 1.0f)
+		if (drawTrans == false && o.object->materials.at(o.object->shapes.at(i).mesh.material_ids.at(0)).dissolve < 1.0f)
 		{
-			transparents.push_back(shapes[i]);
-			transparents_mat.push_back(materials[shapes[i].mesh.material_ids[0]]);
-			transparent_pos.push_back(pos);
-			transparent_rot.push_back(yrot);
+			sceneobj tmpTrans;
+			tmpTrans.object = o.object;
+			tmpTrans.position = o.position;
+			tmpTrans.rotation = sf::Vector3f(0, o.rotation.y, 0);
+
+			sceneTrans.push_back(tmpTrans);
 
 			continue;
 		}
 
-		glBindTexture(GL_TEXTURE_2D, texturesIds[shapes[i].mesh.material_ids[0]]);
+		//glBindTexture(GL_TEXTURE_2D, texturesIds[shapes[i].mesh.material_ids[0]]);
+		glBindTexture(GL_TEXTURE_2D, o.object->textures.at(o.object->shapes.at(i).mesh.material_ids.at(0)).id);
 
-		draw(shapes[i], materials[shapes[i].mesh.material_ids[0]]);
+		draw(o.object->shapes.at(i), o.object->materials.at(o.object->shapes.at(i).mesh.material_ids.at(0)));
 	}
 
-	//glVertexPointer(3, GL_FLOAT, 0, shapes[0].mesh.positions.data());
-	//glDrawElements(GL_TRIANGLES, shapes[0].mesh.indices.size(), GL_UNSIGNED_INT, shapes[0].mesh.indices.data());
-
-	//use: glDrawArrays
-	//glVertexPointer(3, GL_FLOAT, 0, shapes[0].mesh.positions.data());
-	//glDrawArrays(GL_TRIANGLES, 0, shapes[0].mesh.positions.size());
-
-	//glDisableClientState(GL_VERTEX_ARRAY);
-	//glDisableClientState(GL_NORMAL_ARRAY);
-	//glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	glPopMatrix();
 
 	glPopMatrix();
-
-	//glutSwapBuffers();
-
-	/*int err = GL_NO_ERROR;
-	if ((err = glGetError()) != GL_NO_ERROR)
-	std::cout << "Error: " << err << std::endl;*/
-}
-
-void universe::drawTransparent()
-{
-	for (int i = 0; i < transparents.size(); ++i)
-	{
-		glPushMatrix();
-		glTranslatef(transparent_pos.at(i).x, transparent_pos.at(i).y, transparent_pos.at(i).z);
-		glRotatef(transparent_rot.at(i), 0, 1, 0);
-
-		draw(transparents.at(i), transparents_mat.at(i));
-		glPopMatrix();
-	}
 }
 
 void universe::init()
@@ -211,12 +184,23 @@ void universe::run()
 {
 	sf::Vector2f mouse_old(0, 0);
 
-	sf::Vector3f tmppos(0, 1.3f, -15.0);
+	//Build the scene
+	sceneobj showroom;
+	showroom.object = &objects.at(0);
+	showroom.position = showroom.rotation = sf::Vector3f(0, 0, 0);
+
+	scene.push_back(showroom);
+
+	sceneobj abarth;
+	abarth.object = &objects.at(1);
+	abarth.position = sf::Vector3f(0, 1.3f, -15.0f);
+	abarth.rotation = sf::Vector3f(0, 0, 0);
 	for (int i = 0; i <= 3; ++i)
 	{
-		tmppos.z += 15.0f;
-		abarths.push_back(tmppos);
+		scene.push_back(abarth);
+		abarth.position.z += 15.0f;
 	}
+	//***
 
 	init();
 
@@ -224,6 +208,7 @@ void universe::run()
 	int cnt = 0;
 	int meshSwitch = 0;
 	bool quit = false;
+	bool showInfo = true;
 
 	while (!quit)
 	{
@@ -257,6 +242,8 @@ void universe::run()
 						meshSwitch = 0;
 					std::cout << meshSwitch << std::endl;
 				}
+				else if (event.key.code == sf::Keyboard::Num3)
+					showInfo = !showInfo;
 			}
 		}
 
@@ -321,48 +308,47 @@ void universe::run()
 
 		// draw...
 		light();
-		display(objects[0], objects_mat[0], sf::Vector3f(0,0,0), 0);
+		display(scene.at(0), true);	//Draw Showroom
 
-		float dist;
-		for (int i = 0; i < abarths.size(); ++i)
+		float dist = 0;
+		for (int i = 1; i < scene.size(); ++i)
 		{
-			dist = distance(m_camPos, abarths[i]);
+			dist = distance(m_camPos, scene.at(i).position);
 
-			meshSwitch = 2;
+			meshSwitch = 3;
 			if (dist > 15.0f)
-				meshSwitch = 1;
+				meshSwitch = 2;
 			if (dist > 30.0f)
-				meshSwitch = 0;
+				meshSwitch = 1;
 
+			display(scene.at(i));
 			/*if (meshSwitch == 0)
 				display(objects[1], objects_mat[1], abarths[i], 0);
 			else if (meshSwitch == 1)
 				display(objects[1], objects_mat[1], abarths[i], 45.0f);
 			else
 				display(objects[1], objects_mat[1], abarths[i], 90.0f);*/
-
-			if (meshSwitch == 0)
-				display(objects[1], objects_mat[1], abarths[i], 0);
-			else if (meshSwitch == 1)
-				display(objects[2], objects_mat[2], abarths[i], 0);
-			else
-				display(objects[3], objects_mat[3], abarths[i], 0);
+			
+			//objects[meshSwitch].position = abarths[i];
+			//display(objects[meshSwitch], false);
 		}
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
-		drawTransparent();
+		//drawTransparent();
+		for (int i = 0; i < sceneTrans.size(); ++i)
+			display(sceneTrans.at(i), true);
 		glDisable(GL_BLEND);
 
 		//end the current frame (internally swaps the front and back buffers)
 		m_window.display();
 
-		transparents.clear();
-		transparents_mat.clear();
+		sceneTrans.clear();
+		/*transparents_mat.clear();
 		transparent_pos.clear();
-		transparent_rot.clear();
+		transparent_rot.clear();*/
 
-		if (cnt == 100 && false)
+		if (cnt == 100 && showInfo)
 		{
 			//std::cout << cam_x << "\t" << cam_y << "\t" << cam_z << "\t" << cam_h << "\t" << cam_v << std::endl;
 			std::cout << 1 / dt << " : " << dist  << ": " << meshSwitch << std::endl;
