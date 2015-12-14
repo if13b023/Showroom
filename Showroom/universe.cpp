@@ -1,7 +1,5 @@
 #include "universe.h"
 
-
-
 universe::universe()
 {
 	sf::ContextSettings ctxSettings;
@@ -47,19 +45,19 @@ bool universe::addObject(char* dir, char* file)
 
 		texture_t tex;
 		glGenTextures(1, &tex.id);
-
-		sf::Image img;
-		img.loadFromFile(materials.at(i).diffuse_texname);
+		glBindTexture(GL_TEXTURE_2D, tex.id);
 
 		if (materials.at(i).diffuse_texname.empty())
 		{
 			tmp.textures.push_back(tex);
 			continue;
 		}
+
+		sf::Image img;
+		img.loadFromFile(materials.at(i).diffuse_texname);
 		
 		tex.texture = img;
 
-		glBindTexture(GL_TEXTURE_2D, tex.id);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -108,6 +106,12 @@ void universe::draw(tinyobj::shape_t & shape, tinyobj::material_t & mat)
 	memcpy(diffuse, mat.diffuse, 3 * sizeof(float));
 	diffuse[3] = mat.dissolve;*/
 
+	if (mat.shininess < 0.0f)
+		mat.shininess = 0.0f;
+
+	if (mat.shininess > 128.0f)
+		mat.shininess = 128.0f;
+
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat.diffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, mat.specular);
 	glMaterialf(GL_FRONT, GL_SHININESS, mat.shininess);
@@ -125,6 +129,8 @@ void universe::display(sceneobj& o, bool drawTrans)
 	glScalef(o.scale, o.scale, o.scale);
 	glTranslatef(o.position.x, o.position.y, o.position.z);
 	glRotatef(o.rotation.y, 0, 1, 0);
+
+	printError(std::to_string(__LINE__).c_str());
 
 	//LOD
 	float dist;
@@ -148,7 +154,6 @@ void universe::display(sceneobj& o, bool drawTrans)
 			continue;
 		}
 
-		//glBindTexture(GL_TEXTURE_2D, texturesIds[shapes[i].mesh.material_ids[0]]);
 		glBindTexture(GL_TEXTURE_2D, o.object[meshSwitch]->textures.at(o.object[meshSwitch]->shapes.at(i).mesh.material_ids.at(0)).id);
 
 		draw(o.object[meshSwitch]->shapes.at(i), o.object[meshSwitch]->materials.at(o.object[meshSwitch]->shapes.at(i).mesh.material_ids.at(0)));
@@ -184,6 +189,19 @@ float universe::distance(sf::Vector3f& a, sf::Vector3f& b)
 	return dist;
 }
 
+void universe::printError(const char* chapter)
+{
+	GLenum err = glGetError();
+
+	if (err == GL_NO_ERROR)
+		return;
+
+	if (chapter == NULL)
+		std::cout << err << std::endl;
+	else
+		std::cout << chapter << " -> " << err << std::endl;
+}
+
 void universe::run()
 {
 	sf::Vector2f mouse_old(0, 0);
@@ -191,6 +209,8 @@ void universe::run()
 	//Build the scene
 	sceneobj showroom;
 	showroom.object[0] = &objects.at(0);
+	showroom.object[1] = &objects.at(0);
+	showroom.object[2] = &objects.at(0);
 	showroom.position = showroom.rotation = sf::Vector3f(0, 0, 0);
 	showroom.scale = 1.0f;
 
@@ -200,7 +220,7 @@ void universe::run()
 	abarth.object[0] = &objects.at(1);
 	abarth.object[1] = &objects.at(2);
 	abarth.object[2] = &objects.at(3);
-	abarth.scale = 2.0f;
+	abarth.scale = 1.5f;
 	abarth.position = sf::Vector3f(0, 1.3f, -10.0f);
 	abarth.rotation = sf::Vector3f(0, 0, 0);
 	for (int i = 0; i <= 3; ++i)
@@ -211,12 +231,18 @@ void universe::run()
 	//***
 
 	init();
+	light();
+	
+	m_light = m_camPos;
+
+	printError();
 
 	//loop
 	int cnt = 0;
 	int meshSwitch = 0;
 	bool quit = false;
 	bool showInfo = true;
+	bool cameraLight = false;
 
 	while (!quit)
 	{
@@ -252,6 +278,14 @@ void universe::run()
 				}
 				else if (event.key.code == sf::Keyboard::Num3)
 					showInfo = !showInfo;
+				else if (event.key.code == sf::Keyboard::Num4)
+				{
+					std::cout << "LightPos!\n";
+
+					m_light = m_camPos;
+
+					printError("LightPos");
+				}
 			}
 		}
 
@@ -314,32 +348,17 @@ void universe::run()
 		glRotatef(m_camRot.y, 0, 1, 0);
 		glTranslatef(-m_camPos.x, -m_camPos.y, -m_camPos.z);
 
+		printError("after camera movement");
 		// draw...
-		light();
-		display(scene.at(0));	//Draw Showroom
+		GLfloat lightPos[] = { m_light.x, m_light.y, m_light.z, 1.0f };
+		glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+		//light();
+		//display(scene.at(0));	//Draw Showroom
 
 		//float dist = 0;
-		for (int i = 1; i < scene.size(); ++i)
+		for (int i = 0; i < scene.size(); ++i)
 		{
-			/*dist = distance(m_camPos, scene.at(i).position);
-
-			meshSwitch = 2;
-			if (dist > 15.0f)
-				meshSwitch = 1;
-			if (dist > 30.0f)
-				meshSwitch = 0;
-
-			scene.at(i).object = &objects.at(1 + meshSwitch);*/
 			display(scene.at(i));
-			/*if (meshSwitch == 0)
-				display(objects[1], objects_mat[1], abarths[i], 0);
-			else if (meshSwitch == 1)
-				display(objects[1], objects_mat[1], abarths[i], 45.0f);
-			else
-				display(objects[1], objects_mat[1], abarths[i], 90.0f);*/
-			
-			//objects[meshSwitch].position = abarths[i];
-			//display(objects[meshSwitch], false);
 		}
 
 		glEnable(GL_BLEND);

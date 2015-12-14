@@ -47,6 +47,7 @@ private:
 	void draw(tinyobj::shape_t& shape, tinyobj::material_t& mat);
 	void display(sceneobj& o, bool drawTrans = false);
 	void init();
+	void printError(const char* chapter = NULL);
 	float distance(sf::Vector3f& a, sf::Vector3f& b);
 
 	//std::vector<sf::Vector3f> abarths;
@@ -70,7 +71,7 @@ private:
 	GLfloat whiteSpecularMaterial[3] = { 1.0f, 1.0f, 1.0f }; //set the material to white
 	GLfloat greenEmissiveMaterial[3] = { 0.0f, 1.0f, 0.0f }; //set the material to green
 	GLfloat whiteSpecularLight[3] = { 1.0f, 1.0f, 1.0f }; //set the light specular to white
-	GLfloat blackAmbientLight[3] = { 0.1f, 0.1f, 0.1f }; //set the light ambient to black
+	GLfloat blackAmbientLight[3] = { 0.0f, 0.0f, 0.0f }; //set the light ambient to black
 	GLfloat whiteDiffuseLight[3] = { 1.0f, 1.0f, 1.0f }; //set the diffuse light to white
 	GLfloat blankMaterial[3] = { 0.0f, 0.0f, 0.0f }; //set the diffuselight to white
 	GLfloat mShininess[1] = { 64 }; //set the shininess of the material
