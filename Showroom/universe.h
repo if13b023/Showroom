@@ -29,6 +29,7 @@ typedef struct {
 	object_t* object;
 	sf::Vector3f position;
 	sf::Vector3f rotation;
+	float scale;
 } sceneobj;
 
 class universe

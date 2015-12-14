@@ -33,6 +33,10 @@
 *.pdb
 *.opensdf
 
+*.iobj
+*.ipdb
+*.pdb
+
 Models
 
 !suzanne.obj

@@ -122,6 +122,7 @@ void universe::draw(tinyobj::shape_t & shape, tinyobj::material_t & mat)
 void universe::display(sceneobj& o, bool drawTrans)
 {
 	glPushMatrix();
+	glScalef(o.scale, o.scale, o.scale);
 	glTranslatef(o.position.x, o.position.y, o.position.z);
 	glRotatef(o.rotation.y, 0, 1, 0);
 
@@ -129,15 +130,9 @@ void universe::display(sceneobj& o, bool drawTrans)
 	//use: glDrawElements
 	for (int i = 0; i < o.object->shapes.size(); ++i)
 	{
-		if (drawTrans == false && o.object->materials.at(o.object->shapes.at(i).mesh.material_ids.at(0)).dissolve < 1.0f)
+		float dissolve = o.object->materials.at(o.object->shapes.at(i).mesh.material_ids.at(0)).dissolve;
+		if ((drawTrans == false && dissolve < 1.0f) || (drawTrans == true && dissolve >= 1.0f))
 		{
-			sceneobj tmpTrans;
-			tmpTrans.object = o.object;
-			tmpTrans.position = o.position;
-			tmpTrans.rotation = sf::Vector3f(0, o.rotation.y, 0);
-
-			sceneTrans.push_back(tmpTrans);
-
 			continue;
 		}
 
@@ -164,8 +159,6 @@ void universe::init()
 	glShadeModel(GL_SMOOTH);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_TEXTURE_2D);
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_NORMAL_ARRAY);
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -188,11 +181,13 @@ void universe::run()
 	sceneobj showroom;
 	showroom.object = &objects.at(0);
 	showroom.position = showroom.rotation = sf::Vector3f(0, 0, 0);
+	showroom.scale = 1.0f;
 
 	scene.push_back(showroom);
 
 	sceneobj abarth;
 	abarth.object = &objects.at(1);
+	abarth.scale = 2.0f;
 	abarth.position = sf::Vector3f(0, 1.3f, -15.0f);
 	abarth.rotation = sf::Vector3f(0, 0, 0);
 	for (int i = 0; i <= 3; ++i)
@@ -308,19 +303,20 @@ void universe::run()
 
 		// draw...
 		light();
-		display(scene.at(0), true);	//Draw Showroom
+		display(scene.at(0));	//Draw Showroom
 
 		float dist = 0;
 		for (int i = 1; i < scene.size(); ++i)
 		{
 			dist = distance(m_camPos, scene.at(i).position);
 
-			meshSwitch = 3;
+			meshSwitch = 2;
 			if (dist > 15.0f)
-				meshSwitch = 2;
-			if (dist > 30.0f)
 				meshSwitch = 1;
+			if (dist > 30.0f)
+				meshSwitch = 0;
 
+			scene.at(i).object = &objects.at(1 + meshSwitch);
 			display(scene.at(i));
 			/*if (meshSwitch == 0)
 				display(objects[1], objects_mat[1], abarths[i], 0);
@@ -335,15 +331,14 @@ void universe::run()
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
-		//drawTransparent();
-		for (int i = 0; i < sceneTrans.size(); ++i)
-			display(sceneTrans.at(i), true);
+		for (int i = 1; i < scene.size(); ++i)
+			display(scene.at(i), true);
 		glDisable(GL_BLEND);
 
 		//end the current frame (internally swaps the front and back buffers)
 		m_window.display();
 
-		sceneTrans.clear();
+		//sceneTrans.clear();
 		/*transparents_mat.clear();
 		transparent_pos.clear();
 		transparent_rot.clear();*/
