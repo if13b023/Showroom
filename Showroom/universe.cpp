@@ -126,22 +126,33 @@ void universe::display(sceneobj& o, bool drawTrans)
 	glTranslatef(o.position.x, o.position.y, o.position.z);
 	glRotatef(o.rotation.y, 0, 1, 0);
 
+	//LOD
+	float dist;
+	int meshSwitch;
+	dist = distance(m_camPos, o.position);
+
+	meshSwitch = 2;
+	if (dist > 15.0f)
+		meshSwitch = 1;
+	if (dist > 30.0f)
+		meshSwitch = 0;
+	//***
+
 	glPushMatrix();
 	//use: glDrawElements
-	for (int i = 0; i < o.object->shapes.size(); ++i)
+	for (int i = 0; i < o.object[meshSwitch]->shapes.size(); ++i)
 	{
-		float dissolve = o.object->materials.at(o.object->shapes.at(i).mesh.material_ids.at(0)).dissolve;
+		float dissolve = o.object[meshSwitch]->materials.at(o.object[meshSwitch]->shapes.at(i).mesh.material_ids.at(0)).dissolve;
 		if ((drawTrans == false && dissolve < 1.0f) || (drawTrans == true && dissolve >= 1.0f))
 		{
 			continue;
 		}
 
 		//glBindTexture(GL_TEXTURE_2D, texturesIds[shapes[i].mesh.material_ids[0]]);
-		glBindTexture(GL_TEXTURE_2D, o.object->textures.at(o.object->shapes.at(i).mesh.material_ids.at(0)).id);
+		glBindTexture(GL_TEXTURE_2D, o.object[meshSwitch]->textures.at(o.object[meshSwitch]->shapes.at(i).mesh.material_ids.at(0)).id);
 
-		draw(o.object->shapes.at(i), o.object->materials.at(o.object->shapes.at(i).mesh.material_ids.at(0)));
+		draw(o.object[meshSwitch]->shapes.at(i), o.object[meshSwitch]->materials.at(o.object[meshSwitch]->shapes.at(i).mesh.material_ids.at(0)));
 	}
-
 	glPopMatrix();
 
 	glPopMatrix();
@@ -179,21 +190,23 @@ void universe::run()
 
 	//Build the scene
 	sceneobj showroom;
-	showroom.object = &objects.at(0);
+	showroom.object[0] = &objects.at(0);
 	showroom.position = showroom.rotation = sf::Vector3f(0, 0, 0);
 	showroom.scale = 1.0f;
 
 	scene.push_back(showroom);
 
 	sceneobj abarth;
-	abarth.object = &objects.at(1);
+	abarth.object[0] = &objects.at(1);
+	abarth.object[1] = &objects.at(2);
+	abarth.object[2] = &objects.at(3);
 	abarth.scale = 2.0f;
-	abarth.position = sf::Vector3f(0, 1.3f, -15.0f);
+	abarth.position = sf::Vector3f(0, 1.3f, -10.0f);
 	abarth.rotation = sf::Vector3f(0, 0, 0);
 	for (int i = 0; i <= 3; ++i)
 	{
 		scene.push_back(abarth);
-		abarth.position.z += 15.0f;
+		abarth.position.z += 10.0f;
 	}
 	//***
 
@@ -305,10 +318,10 @@ void universe::run()
 		light();
 		display(scene.at(0));	//Draw Showroom
 
-		float dist = 0;
+		//float dist = 0;
 		for (int i = 1; i < scene.size(); ++i)
 		{
-			dist = distance(m_camPos, scene.at(i).position);
+			/*dist = distance(m_camPos, scene.at(i).position);
 
 			meshSwitch = 2;
 			if (dist > 15.0f)
@@ -316,7 +329,7 @@ void universe::run()
 			if (dist > 30.0f)
 				meshSwitch = 0;
 
-			scene.at(i).object = &objects.at(1 + meshSwitch);
+			scene.at(i).object = &objects.at(1 + meshSwitch);*/
 			display(scene.at(i));
 			/*if (meshSwitch == 0)
 				display(objects[1], objects_mat[1], abarths[i], 0);
@@ -346,7 +359,7 @@ void universe::run()
 		if (cnt == 100 && showInfo)
 		{
 			//std::cout << cam_x << "\t" << cam_y << "\t" << cam_z << "\t" << cam_h << "\t" << cam_v << std::endl;
-			std::cout << 1 / dt << " : " << dist  << ": " << meshSwitch << std::endl;
+			std::cout << 1 / dt << std::endl;
 			cnt = 0;
 		}
 		cnt++;

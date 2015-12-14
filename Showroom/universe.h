@@ -26,7 +26,7 @@ typedef struct {
 } object_t;
 
 typedef struct {
-	object_t* object;
+	object_t* object[3];
 	sf::Vector3f position;
 	sf::Vector3f rotation;
 	float scale;
