@@ -30,6 +30,9 @@ int main(int argc, char** argv)
 	u.addObject(dir, "fiat500blandswap_low.obj");
 	u.addObject(dir, "fiat500blandswap_mid.obj");
 	u.addObject(dir, "fiat500blandswap_high.obj");
+	u.addObject(dir, "bmw_low.obj");
+	u.addObject(dir, "bmw_mid.obj");
+	u.addObject(dir, "bmw_high.obj");
 
 	u.run();
 

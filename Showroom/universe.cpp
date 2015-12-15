@@ -116,6 +116,7 @@ void universe::draw(tinyobj::shape_t & shape, tinyobj::material_t & mat)
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat.specular);
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, mat.shininess);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blackAmbientLight);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, mat.emission);
 	
 	glTexCoordPointer(2, GL_FLOAT, 0, shape.mesh.texcoords.data());
 	glVertexPointer(3, GL_FLOAT, 0, shape.mesh.positions.data());
@@ -231,18 +232,36 @@ void universe::run()
 	abarth.object[0] = &objects.at(1);
 	abarth.object[1] = &objects.at(2);
 	abarth.object[2] = &objects.at(3);
-	abarth.scale = 1.5f;
-	abarth.position = sf::Vector3f(0, 1.3f, -10.0f);
+	abarth.scale = 1.0f;
+	abarth.position = sf::Vector3f(2.3f, 1.3f, -44.0f);
 	abarth.rotation = sf::Vector3f(0, 0, 0);
-	for (int i = 0; i <= 3; ++i)
+	for (int i = 0; i <= 5; ++i)
 	{
 		scene.push_back(abarth);
 
-		abarth.position.x += 10.0f;
+		abarth.position.x += 15.0f;
 		scene.push_back(abarth);
-		abarth.position.x -= 10.0f;
+		abarth.position.x -= 15.0f;
 
-		abarth.position.z += 10.0f;
+		abarth.position.z += 12.0f;
+	}
+
+	sceneobj bmw;
+	bmw.object[0] = &objects.at(4);
+	bmw.object[1] = &objects.at(5);
+	bmw.object[2] = &objects.at(6);
+	bmw.scale = 0.8f;
+	bmw.position = sf::Vector3f(-10.0f, 0.0f, -40.0f);
+	bmw.rotation = sf::Vector3f(0, 90.0f, 0);
+	for (int i = 0; i <= 3; ++i)
+	{
+		scene.push_back(bmw);
+
+		bmw.position.x += 20.0f;
+		scene.push_back(bmw);
+		bmw.position.x -= 20.0f;
+
+		bmw.position.z += 25.0f;
 	}
 	//***
 
@@ -307,20 +326,18 @@ void universe::run()
 				if (event.key.code == sf::Keyboard::Escape)
 					quit = true;
 				else if (event.key.code == sf::Keyboard::Num1)
-					std::cout << m_camRot.y << std::endl;
-				else if (event.key.code == sf::Keyboard::Num2)
 				{
 					sorting = !sorting;
-					if(sorting)
+					if (sorting)
 						std::cout << "Sorting is ON\n";
 					else
 						std::cout << "Sorting is OFF\n";
 				}
-				else if (event.key.code == sf::Keyboard::Num3)
+				else if (event.key.code == sf::Keyboard::Num2)
 					showInfo = !showInfo;
-				else if (event.key.code == sf::Keyboard::Num4)
+				else if (event.key.code == sf::Keyboard::Num3)
 				{
-					std::cout << "LightPos!\n";
+					std::cout << "LightPos! " << m_camPos.x << ":" << m_camPos.y << ":" << m_camPos.z << std::endl;
 
 					m_light = m_camPos;
 
