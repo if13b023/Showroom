@@ -296,7 +296,7 @@ void universe::run()
 	printError();
 
 	//loop
-	int cnt = 0;
+	float cnt = 0;
 	int meshSwitch = 0;
 	bool quit = false;
 	bool showInfo = true;
@@ -334,10 +334,16 @@ void universe::run()
 						std::cout << "Sorting is OFF\n";
 				}
 				else if (event.key.code == sf::Keyboard::Num2)
+				{
 					showInfo = !showInfo;
+					if (showInfo)
+						std::cout << "Info is ON\n";
+					else
+						std::cout << "Info is OFF\n";
+				}
 				else if (event.key.code == sf::Keyboard::Num3)
 				{
-					std::cout << "LightPos! " << m_camPos.x << ":" << m_camPos.y << ":" << m_camPos.z << std::endl;
+					std::cout << "LightPos: " << m_camPos.x << ":" << m_camPos.y << ":" << m_camPos.z << std::endl;
 
 					m_light = m_camPos;
 
@@ -448,13 +454,13 @@ void universe::run()
 		m_window.display();
 
 		//DEBUG INFORMATION
-		if (cnt == 100 && showInfo)
+		if (cnt > 1 && showInfo)
 		{
 			//std::cout << cam_x << "\t" << cam_y << "\t" << cam_z << "\t" << cam_h << "\t" << cam_v << std::endl;
 			std::cout << 1 / dt << std::endl;
 			cnt = 0;
 		}
-		cnt++;
+		cnt += dt;
 		//***
 
 		mouse_old = sf::Vector2f(sf::Mouse::getPosition());
