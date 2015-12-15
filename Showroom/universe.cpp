@@ -112,10 +112,11 @@ void universe::draw(tinyobj::shape_t & shape, tinyobj::material_t & mat)
 	if (mat.shininess > 128.0f)
 		mat.shininess = 128.0f;
 
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat.diffuse);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, mat.specular);
-	glMaterialf(GL_FRONT, GL_SHININESS, mat.shininess);
-
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat.diffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat.specular);
+	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, mat.shininess);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blackAmbientLight);
+	
 	glTexCoordPointer(2, GL_FLOAT, 0, shape.mesh.texcoords.data());
 	glVertexPointer(3, GL_FLOAT, 0, shape.mesh.positions.data());
 	glNormalPointer(GL_FLOAT, 0, shape.mesh.normals.data());
@@ -126,9 +127,12 @@ void universe::draw(tinyobj::shape_t & shape, tinyobj::material_t & mat)
 void universe::display(sceneobj& o, bool drawTrans)
 {
 	glPushMatrix();
+
+	//apply transformations
 	glScalef(o.scale, o.scale, o.scale);
 	glTranslatef(o.position.x, o.position.y, o.position.z);
 	glRotatef(o.rotation.y, 0, 1, 0);
+	//***
 
 	printError(std::to_string(__LINE__).c_str());
 
@@ -145,19 +149,26 @@ void universe::display(sceneobj& o, bool drawTrans)
 	//***
 
 	glPushMatrix();
-	//use: glDrawElements
+
+	//draw elements
 	for (int i = 0; i < o.object[meshSwitch]->shapes.size(); ++i)
 	{
+		//filter transparent shapes
 		float dissolve = o.object[meshSwitch]->materials.at(o.object[meshSwitch]->shapes.at(i).mesh.material_ids.at(0)).dissolve;
 		if ((drawTrans == false && dissolve < 1.0f) || (drawTrans == true && dissolve >= 1.0f))
 		{
 			continue;
 		}
+		//***
 
+		//set texture
 		glBindTexture(GL_TEXTURE_2D, o.object[meshSwitch]->textures.at(o.object[meshSwitch]->shapes.at(i).mesh.material_ids.at(0)).id);
 
+		//call draw method
 		draw(o.object[meshSwitch]->shapes.at(i), o.object[meshSwitch]->materials.at(o.object[meshSwitch]->shapes.at(i).mesh.material_ids.at(0)));
 	}
+	//***
+
 	glPopMatrix();
 
 	glPopMatrix();
@@ -226,7 +237,35 @@ void universe::run()
 	for (int i = 0; i <= 3; ++i)
 	{
 		scene.push_back(abarth);
+
+		abarth.position.x += 10.0f;
+		scene.push_back(abarth);
+		abarth.position.x -= 10.0f;
+
 		abarth.position.z += 10.0f;
+	}
+	//***
+
+	//Split Transparent
+	for (int i = 0; i < scene.size(); ++i)
+	{
+		object_t* iterator = scene.at(i).object[2];
+		for (int j = 0; j < iterator->shapes.size(); ++j)
+		{
+			if (iterator->materials.at(iterator->shapes.at(j).mesh.material_ids.at(0)).dissolve < 1.0f)
+			{
+				transparen_t scnTmp;
+				scnTmp.position = scene.at(i).position;
+				scnTmp.rotation = scene.at(i).rotation;
+				scnTmp.scale = scene.at(i).scale;
+				scnTmp.mat = iterator->materials.at(iterator->shapes.at(j).mesh.material_ids.at(0));
+				//scnTmp.tex = iterator->textures.at(iterator->shapes.at(j).mesh.material_ids.at(0));
+				scnTmp.shape = iterator->shapes.at(j);
+				scnTmp.dist = 0.0f;
+
+				sceneTrans.push_back(scnTmp);
+			}
+		}
 	}
 	//***
 
@@ -243,6 +282,7 @@ void universe::run()
 	bool quit = false;
 	bool showInfo = true;
 	bool cameraLight = false;
+	bool sorting = true;
 
 	while (!quit)
 	{
@@ -270,11 +310,11 @@ void universe::run()
 					std::cout << m_camRot.y << std::endl;
 				else if (event.key.code == sf::Keyboard::Num2)
 				{
-					if (meshSwitch < 3)
-						++meshSwitch;
+					sorting = !sorting;
+					if(sorting)
+						std::cout << "Sorting is ON\n";
 					else
-						meshSwitch = 0;
-					std::cout << meshSwitch << std::endl;
+						std::cout << "Sorting is OFF\n";
 				}
 				else if (event.key.code == sf::Keyboard::Num3)
 					showInfo = !showInfo;
@@ -353,28 +393,44 @@ void universe::run()
 		GLfloat lightPos[] = { m_light.x, m_light.y, m_light.z, 1.0f };
 		glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 		//light();
-		//display(scene.at(0));	//Draw Showroom
 
-		//float dist = 0;
+		//draw scene without transparent objects
 		for (int i = 0; i < scene.size(); ++i)
 		{
 			display(scene.at(i));
 		}
+		//***
 
+		//draw transparents
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
-		for (int i = 1; i < scene.size(); ++i)
-			display(scene.at(i), true);
+		//for (int i = 1; i < scene.size(); ++i)
+		//	display(scene.at(i), true);
+		for (int i = 0; i < sceneTrans.size(); ++i)
+		{
+			sceneTrans.at(i).dist = distance(m_camPos, sceneTrans.at(i).position);
+		}
+
+		if(sorting)
+			std::sort(sceneTrans.begin(), sceneTrans.end());
+
+		for (int i = sceneTrans.size()-1; i >= 0; --i)
+		{
+			glPushMatrix();
+			glScalef(sceneTrans.at(i).scale, sceneTrans.at(i).scale, sceneTrans.at(i).scale);
+			glTranslatef(sceneTrans.at(i).position.x, sceneTrans.at(i).position.y, sceneTrans.at(i).position.z);
+			glRotatef(sceneTrans.at(i).rotation.y, 0, 1, 0);
+
+			draw(sceneTrans.at(i).shape, sceneTrans.at(i).mat);
+			glPopMatrix();
+		}
 		glDisable(GL_BLEND);
+		//****
 
 		//end the current frame (internally swaps the front and back buffers)
 		m_window.display();
 
-		//sceneTrans.clear();
-		/*transparents_mat.clear();
-		transparent_pos.clear();
-		transparent_rot.clear();*/
-
+		//DEBUG INFORMATION
 		if (cnt == 100 && showInfo)
 		{
 			//std::cout << cam_x << "\t" << cam_y << "\t" << cam_z << "\t" << cam_h << "\t" << cam_v << std::endl;
@@ -382,6 +438,7 @@ void universe::run()
 			cnt = 0;
 		}
 		cnt++;
+		//***
 
 		mouse_old = sf::Vector2f(sf::Mouse::getPosition());
 		dt = clock.getElapsedTime().asSeconds();

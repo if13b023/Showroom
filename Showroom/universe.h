@@ -32,6 +32,20 @@ typedef struct {
 	float scale;
 } sceneobj;
 
+struct transparen_t{
+	tinyobj::shape_t shape;
+	tinyobj::material_t mat;
+	sf::Vector3f position;
+	sf::Vector3f rotation;
+	float scale;
+	float dist;
+
+	bool operator < (const transparen_t& t) const
+	{
+		return (dist < t.dist);
+	}
+};
+
 class universe
 {
 public:
@@ -55,7 +69,7 @@ private:
 	std::vector<object_t> objects;
 
 	std::vector<sceneobj> scene;
-	std::vector<sceneobj> sceneTrans;
+	std::vector<transparen_t> sceneTrans;
 
 	sf::Window m_window;
 
