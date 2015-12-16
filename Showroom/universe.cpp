@@ -125,7 +125,7 @@ void universe::draw(tinyobj::shape_t & shape, tinyobj::material_t & mat)
 	glDrawElements(GL_TRIANGLES, shape.mesh.indices.size(), GL_UNSIGNED_INT, shape.mesh.indices.data());
 }
 
-void universe::display(sceneobj& o, bool drawTrans)
+void universe::display(sceneobj& o, bool drawTrans, int lod)
 {
 	glPushMatrix();
 
@@ -142,11 +142,16 @@ void universe::display(sceneobj& o, bool drawTrans)
 	int meshSwitch;
 	dist = distance(m_camPos, o.position);
 
-	meshSwitch = 2;
-	if (dist > 15.0f)
-		meshSwitch = 1;
-	if (dist > 30.0f)
-		meshSwitch = 0;
+	if (lod >= 3)
+	{
+		meshSwitch = 2;
+		if (dist > 15.0f)
+			meshSwitch = 1;
+		if (dist > 30.0f)
+			meshSwitch = 0;
+	}
+	else
+		meshSwitch = lod;
 	//***
 
 	glPushMatrix();
@@ -265,29 +270,6 @@ void universe::run()
 	}
 	//***
 
-	//Split Transparent
-	for (int i = 0; i < scene.size(); ++i)
-	{
-		object_t* iterator = scene.at(i).object[2];
-		for (int j = 0; j < iterator->shapes.size(); ++j)
-		{
-			if (iterator->materials.at(iterator->shapes.at(j).mesh.material_ids.at(0)).dissolve < 1.0f)
-			{
-				transparen_t scnTmp;
-				scnTmp.position = scene.at(i).position;
-				scnTmp.rotation = scene.at(i).rotation;
-				scnTmp.scale = scene.at(i).scale;
-				scnTmp.mat = iterator->materials.at(iterator->shapes.at(j).mesh.material_ids.at(0));
-				//scnTmp.tex = iterator->textures.at(iterator->shapes.at(j).mesh.material_ids.at(0));
-				scnTmp.shape = iterator->shapes.at(j);
-				scnTmp.dist = 0.0f;
-
-				sceneTrans.push_back(scnTmp);
-			}
-		}
-	}
-	//***
-
 	init();
 	light();
 	
@@ -297,7 +279,7 @@ void universe::run()
 
 	//loop
 	float cnt = 0;
-	int meshSwitch = 0;
+	int lod = 4;
 	bool quit = false;
 	bool showInfo = true;
 	bool cameraLight = false;
@@ -318,7 +300,6 @@ void universe::run()
 			else if (event.type == sf::Event::Resized)
 			{
 				// adjust the viewport when the window is resized
-				//glViewport(0, 0, event.size.width, event.size.height);
 				resize();
 			}
 			else if (event.type == sf::Event::KeyPressed)
@@ -349,12 +330,34 @@ void universe::run()
 
 					printError("LightPos");
 				}
+				else if (event.key.code == sf::Keyboard::Num4)
+				{
+					++lod;
+
+					if (lod > 4)
+						lod = 0;
+
+					switch (lod)
+					{
+						case 0:
+							std::cout << "LOD: lowest quality\n";
+						break;
+						case 1:
+							std::cout << "LOD: mid quality\n";
+						break;
+						case 2:
+							std::cout << "LOD: highest quality\n";
+						break;
+						case 3:
+							std::cout << "LOD: automatic\n";
+						break;
+					}
+				}
 			}
 		}
 
 		//Mouse Input
 		float sens = 3.0f;
-		//sf::Vector2f mouse_diff = mouse_old - sf::Vector2f(sf::Mouse::getPosition());
 		sf::Vector2f mouse_diff = sf::Vector2f(sf::Mouse::getPosition());
 		m_camRot.y = (mouse_diff.x / sf::VideoMode::getDesktopMode().width) * 360.0f * sens;
 		m_camRot.x = (mouse_diff.y / sf::VideoMode::getDesktopMode().height) * 360.0f * sens;
@@ -415,38 +418,29 @@ void universe::run()
 		// draw...
 		GLfloat lightPos[] = { m_light.x, m_light.y, m_light.z, 1.0f };
 		glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
-		//light();
 
 		//draw scene without transparent objects
 		for (int i = 0; i < scene.size(); ++i)
 		{
-			display(scene.at(i));
+			display(scene.at(i), false, lod);
 		}
 		//***
 
 		//draw transparents
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
-		//for (int i = 1; i < scene.size(); ++i)
-		//	display(scene.at(i), true);
-		for (int i = 0; i < sceneTrans.size(); ++i)
+
+		for (int i = 0; i < scene.size(); ++i)
 		{
-			sceneTrans.at(i).dist = distance(m_camPos, sceneTrans.at(i).position);
+			scene.at(i).dist = distance(m_camPos, scene.at(i).position);
 		}
 
-		if(sorting)
-			std::sort(sceneTrans.begin(), sceneTrans.end());
+		if (sorting)
+			std::sort(scene.begin(), scene.end());
 
-		for (int i = sceneTrans.size()-1; i >= 0; --i)
-		{
-			glPushMatrix();
-			glScalef(sceneTrans.at(i).scale, sceneTrans.at(i).scale, sceneTrans.at(i).scale);
-			glTranslatef(sceneTrans.at(i).position.x, sceneTrans.at(i).position.y, sceneTrans.at(i).position.z);
-			glRotatef(sceneTrans.at(i).rotation.y, 0, 1, 0);
+		for (int i = scene.size() - 1; i >= 0; --i)
+			display(scene.at(i), true, lod);
 
-			draw(sceneTrans.at(i).shape, sceneTrans.at(i).mat);
-			glPopMatrix();
-		}
 		glDisable(GL_BLEND);
 		//****
 

@@ -10,6 +10,16 @@ about
 this is a university project
 it shows basic opengl, level-of-detail and sorting of transparent objects
 
+executable
+-----------
+    folder structure
+    -----------------
+                             [root]
+                       /               \
+               Showroom                Models
+               (*.exe, *.dll,...)      (*.obj and *.mtl files)
+      
+
 controls
 ---------
 wasd    - moving around
@@ -17,6 +27,7 @@ mouse   - looking around
 1       - toggle transparent sorting
 2       - toggle FPS info
 3       - set light position to current camera position
+4       - switch LOD (automatic, low, mid, high)
 
 build
 ------
@@ -35,7 +46,6 @@ build
     know issues
     ------------
     -) please don't start the project in debug mode when you want to load big (>5mb) obj files, it is horribly slow
-    -) no textures on transparent materials
 
 credit
 -------

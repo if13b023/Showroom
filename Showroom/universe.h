@@ -14,33 +14,34 @@
 #include <SFML\OpenGL.hpp>
 #include <SFML\Graphics\Image.hpp>
 
-typedef struct {
+struct texture_t {
 	GLuint id;
 	sf::Image texture;
-} texture_t;
+};
 
-typedef struct {
+struct object_t{
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 	std::vector<texture_t> textures;
-} object_t;
+};
 
-typedef struct {
+/*struct sceneobj{
 	object_t* object[3];
 	sf::Vector3f position;
 	sf::Vector3f rotation;
 	float scale;
-} sceneobj;
+};*/
 
-struct transparen_t{
-	tinyobj::shape_t shape;
-	tinyobj::material_t mat;
+struct sceneobj{
+	//tinyobj::shape_t shape;
+	//tinyobj::material_t mat;
+	object_t* object[3];
 	sf::Vector3f position;
 	sf::Vector3f rotation;
 	float scale;
 	float dist;
 
-	bool operator < (const transparen_t& t) const
+	bool operator < (const sceneobj& t) const
 	{
 		return (dist < t.dist);
 	}
@@ -59,7 +60,7 @@ private:
 	void resize();
 	void light();
 	void draw(tinyobj::shape_t& shape, tinyobj::material_t& mat);
-	void display(sceneobj& o, bool drawTrans = false);
+	void display(sceneobj& o, bool drawTrans = false, int lod = 4);
 	void init();
 	void printError(const char* chapter = NULL);
 	float distance(sf::Vector3f& a, sf::Vector3f& b);
@@ -69,7 +70,6 @@ private:
 	std::vector<object_t> objects;
 
 	std::vector<sceneobj> scene;
-	std::vector<transparen_t> sceneTrans;
 
 	sf::Window m_window;
 
