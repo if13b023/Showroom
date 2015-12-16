@@ -223,6 +223,8 @@ void universe::run()
 {
 	sf::Vector2f mouse_old(0, 0);
 
+	m_camPos = sf::Vector3f(0, 5.0f, 0);
+
 	//Build the scene
 	sceneobj showroom;
 	showroom.object[0] = &objects.at(0);
