@@ -50,3 +50,6 @@ Models
 !Executable/*.exe
 !Executable/*.dll
 
+*.opendb
+*.db
+
