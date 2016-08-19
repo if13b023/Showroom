@@ -16,16 +16,13 @@ bool universe::addObject(char* dir, char* file)
 {
 	bool ret = false;
 	std::string err;
-
-	char* comp = new char[strlen(dir) + strlen(file) + 1];
-	memcpy(comp, dir, strlen(dir));
-	memcpy(comp + strlen(dir), file, strlen(file));
-	comp[strlen(dir) + strlen(file)] = '\0';
-
+	std::string comp = dir;
+	comp.append(file);
+	
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 
-	ret = tinyobj::LoadObj(shapes, materials, err, comp, dir);
+	ret = tinyobj::LoadObj(shapes, materials, err, comp.c_str(), dir);
 
 	if (!err.empty()) { // `err` may contain warning message.
 		std::cout << err << std::endl;
