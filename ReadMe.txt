@@ -43,11 +43,11 @@ build
        tinyobjloader    SFML-2.3.2       Showroom
                                             (contains Showroom.sln)
 
-    know issues
+    known issues
     ------------
     -) please don't start the project in debug mode when you want to load big (>5mb) obj files, it is horribly slow
 
 credit
 -------
-    -) abarth model by ForgetTheNorm    -> http://www.blendswap.com/user/ForgetTheNorm
+    -) abarth model by ForgetTheNorm    -> http://www.blendswap.com/user/Pierallard
     -) bmw model by mikepan             -> http://www.blendswap.com/user/mikepan
